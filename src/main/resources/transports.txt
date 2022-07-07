@@ -4630,3 +4630,17 @@
 3033 6068 0 3283 6058 0 Add end Transport 0
 3033 6063 0 3033 6061 0 Walk here  0
 3033 6061 0 3033 6063 0 Walk here  0
+3575 3297 0 3556 9718 3 Add start Transport 0
+3556 9718 3 3572 3299 0 Add end Transport 0
+3565 3289 0 3557 9703 3 Add start Transport 0
+3557 9703 3 3563 3288 0 Walk here  0
+3565 3275 0 3546 9684 3 Add start Transport 0
+3546 9684 3 3564 3274 0 Add start Transport 0
+3578 3282 0 3534 9704 3 Add start Transport 0
+3534 9704 3 3577 3281 0 Walk here  0
+3537 9704 3 3569 9677 0 Mark tile  0
+3569 9677 0 3537 9703 3 Add start Transport 0
+3553 3282 0 3568 9683 3 Add start Transport 0
+3568 9683 3 3554 3284 0 Walk here  0
+3557 3298 0 3578 9706 3 Add start Transport 0
+3578 9706 3 3559 3296 0 Climb-up Staircase 20672

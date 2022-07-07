@@ -21,6 +21,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.JagexColors;
@@ -74,20 +75,19 @@ public class SnailManModePlugin extends Plugin
 
 	private boolean isLoggedIn;
 	private boolean isAlive;
-	private WorldPoint transportStart;
 
+	private WorldPoint transportStart;
 	private MenuEntry lastClick;
 
 	private static final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
-	private static final String TRANSPORT = ColorUtil.wrapWithColorTag("Transport", JagexColors.MENU_TARGET);
 	private static final String WALK_HERE = "Walk here";
+	private static final String TRANSPORT = ColorUtil.wrapWithColorTag("Transport", JagexColors.MENU_TARGET);
 	private static final String CONFIG_GROUP = "snailman";
-	private static final String CONFIG_KEY_SNAIL_LOC_X = "snailWorldPointX";
-	private static final String CONFIG_KEY_SNAIL_LOC_Y = "snailWorldPointY";
-	private static final String CONFIG_KEY_SNAIL_LOC_PLANE = "snailWorldPointPlane";
+	private static final String CONFIG_KEY_SNAIL_LOC = "snailWorldPoint";
 	private static final WorldPoint DEFAULT_SNAIL_START = new WorldPoint(1181, 3624, 0);
+	public static final boolean DEV_MODE = true;
 
 	@Provides
 	SnailManModeConfig provideConfig(ConfigManager configManager)
@@ -137,13 +137,8 @@ public class SnailManModePlugin extends Plugin
 		CollisionMap map = new CollisionMap(64, compressedRegions);
 		pathfinder = new Pathfinder(map, transports);
 
-
-
-		this.snailWorldPoint = getSavedSnailWorldPoint();
-
 		isLoggedIn = false;
 		isAlive = true;
-		currentPathIndex = 1;
 
 		overlayManager.add(snailManModeOverlay);
 		overlayManager.add(snailManModeMapOverlay);
@@ -152,7 +147,6 @@ public class SnailManModePlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
-		saveSnailWorldPoint();
 		overlayManager.remove(snailManModeOverlay);
 		overlayManager.remove(snailManModeMapOverlay);
 	}
@@ -162,17 +156,17 @@ public class SnailManModePlugin extends Plugin
 	}
 
 	private WorldPoint getSavedSnailWorldPoint() {
-		final String xConfig = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_X);
+		if(this.configManager.getRSProfileKey() == null) return null;
 
-		if(xConfig == null || xConfig.isEmpty()) {
+		final WorldPoint point = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC, WorldPoint.class);
+
+		log.info("Getting from profile: "+this.configManager.getRSProfileKey()+", value: "+point);
+
+		if(point == null) {
 			return DEFAULT_SNAIL_START;
 		}
 
-		final int x = Integer.parseInt(xConfig);
-		final int y = Integer.parseInt(configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_Y));
-		final int plane = Integer.parseInt(configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_PLANE));
-
-		return new WorldPoint(x, y, plane);
+		return point;
 	}
 
 	public void setSnailWorldPoint(WorldPoint point) {
@@ -180,61 +174,67 @@ public class SnailManModePlugin extends Plugin
 	}
 
 	private void saveSnailWorldPoint() {
-		this.configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_X, snailWorldPoint.getX());
-		this.configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_Y, snailWorldPoint.getY());
-		this.configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_PLANE, snailWorldPoint.getPlane());
+		if(this.configManager.getRSProfileKey() == null) return;
+
+		log.info("Saving to profile: "+this.configManager.getRSProfileKey()+", value: "+this.snailWorldPoint);
+
+		this.configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC, snailWorldPoint);
 	}
 
-//	@Subscribe
-//	public void onMenuEntryAdded(MenuEntryAdded event) {
-//		if (client.isKeyPressed(KeyCode.KC_SHIFT) && event.getOption().equals(WALK_HERE)) {
-//			addMenuEntry(event, ADD_START, TRANSPORT, 1);
-//			addMenuEntry(event, ADD_END, TRANSPORT, 1);
-//		}
-//	}
-//
-//	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
-//		client.createMenuEntry(position)
-//				.setOption(option)
-//				.setTarget(target)
-//				.setParam0(event.getActionParam0())
-//				.setParam1(event.getActionParam1())
-//				.setIdentifier(event.getIdentifier())
-//				.setType(MenuAction.RUNELITE)
-//				.onClick(this::onMenuOptionClicked);
-//	}
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded event) {
+		if (client.isKeyPressed(KeyCode.KC_SHIFT) && event.getOption().equals(WALK_HERE) && DEV_MODE) {
+			addMenuEntry(event, ADD_START);
+			addMenuEntry(event, ADD_END);
+		}
+	}
 
-//	private void onMenuOptionClicked(MenuEntry entry) {
-//		Player localPlayer = client.getLocalPlayer();
-//
-//		WorldPoint currentLocation = localPlayer.getWorldLocation();
-//		if (entry.getOption().equals(ADD_START) && entry.getTarget().equals(TRANSPORT)) {
-//			transportStart = currentLocation;
-//		}
-//
-//		if (entry.getOption().equals(ADD_END) && entry.getTarget().equals(TRANSPORT)) {
-//			String transport = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + " " +
-//					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + " " +
-//					lastClick.getOption() + " " + Text.removeTags(lastClick.getTarget()) + " " + lastClick.getIdentifier();
-//			System.out.println(transport);
-//			pathfinder.transports.computeIfAbsent(transportStart, k -> new ArrayList<>()).add(currentLocation);
-//			pathfinder.writeTransportToFile(transport);
-//		}
-//
-//		if (entry.getType() != MenuAction.WALK) {
-//			lastClick = entry;
-//		}
-//	}
+	private void addMenuEntry(MenuEntryAdded event, String option) {
+		client.createMenuEntry(1)
+				.setOption(option)
+				.setTarget(SnailManModePlugin.TRANSPORT)
+				.setParam0(event.getActionParam0())
+				.setParam1(event.getActionParam1())
+				.setIdentifier(event.getIdentifier())
+				.setType(MenuAction.RUNELITE)
+				.onClick(this::onMenuOptionClicked);
+	}
+
+	private void onMenuOptionClicked(MenuEntry entry) {
+		Player localPlayer = client.getLocalPlayer();
+
+		WorldPoint currentLocation = localPlayer.getWorldLocation();
+		if (entry.getOption().equals(ADD_START) && entry.getTarget().equals(TRANSPORT)) {
+			transportStart = currentLocation;
+		}
+
+		if (entry.getOption().equals(ADD_END) && entry.getTarget().equals(TRANSPORT)) {
+			String transport = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + " " +
+					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + " " +
+					lastClick.getOption() + " " + Text.removeTags(lastClick.getTarget()) + " " + lastClick.getIdentifier();
+			System.out.println(transport);
+			pathfinder.transports.computeIfAbsent(transportStart, k -> new ArrayList<>()).add(currentLocation);
+			pathfinder.writeTransportToFile(transport);
+		}
+
+		if (entry.getType() != MenuAction.WALK) {
+			lastClick = entry;
+		}
+	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		if(gameStateChanged.getGameState() == GameState.LOGGED_IN) {
+		if(gameStateChanged.getGameState() == GameState.LOGGED_IN && !isLoggedIn) {
+			final WorldPoint point = getSavedSnailWorldPoint();
+			setSnailWorldPoint(point);
+			currentPathIndex = 1;
 			isLoggedIn = true;
 		}
-		else if(gameStateChanged.getGameState() == GameState.LOGIN_SCREEN){
+		else if(gameStateChanged.getGameState() == GameState.LOGIN_SCREEN && isLoggedIn){
 			isLoggedIn = false;
 			saveSnailWorldPoint();
+			currentPath = null;
 		}
 	}
 
@@ -242,8 +242,10 @@ public class SnailManModePlugin extends Plugin
 	public void onGameTick(GameTick tick) {
 		if(!isLoggedIn) return;
 
+		WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
+		final int distanceFromPlayer = snailWorldPoint.distanceTo2D(playerPoint);
+
 		if(currentPath == null) {
-			WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
 			currentPath = calculatePath(snailWorldPoint, playerPoint);
 		}
 
@@ -305,10 +307,6 @@ public class SnailManModePlugin extends Plugin
 	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end) {
 		if(currentPath != null && currentPath.loading) return currentPath;
 		if(currentPath != null) currentPath.stopThread();
-
-		saveSnailWorldPoint();
-
-		log.info("Recalculating path");
 
 		return pathfinder.new Path(start, end, false);
 	}

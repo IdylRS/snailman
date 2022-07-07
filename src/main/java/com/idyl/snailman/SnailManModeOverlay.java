@@ -32,7 +32,7 @@ public class SnailManModeOverlay extends Overlay {
 
     private void renderTransports(Graphics2D graphics) {
         for (WorldPoint a : plugin.pathfinder.transports.keySet()) {
-            drawTransport(graphics, a, Color.GREEN, -1);
+            drawTransport(graphics, a);
 
             java.awt.Point ca = tileCenter(a);
 
@@ -85,7 +85,7 @@ public class SnailManModeOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        renderTransports(graphics);
+        if(SnailManModePlugin.DEV_MODE) renderTransports(graphics);
 
         WorldPoint snailPoint = plugin.getSnailWorldPoint();
 
@@ -114,7 +114,7 @@ public class SnailManModeOverlay extends Overlay {
             OverlayUtil.renderPolygon(graphics, poly, color, new Color(0, 0, 0, 1), borderStroke);
         }
 
-        if(name != "") {
+        if(!name.equals("")) {
             Point canvasTextLocation = Perspective.getCanvasTextLocation(client, graphics, lp, name, 0);
             if (canvasTextLocation != null)
             {
@@ -123,7 +123,7 @@ public class SnailManModeOverlay extends Overlay {
         }
     }
 
-    private void drawTransport(Graphics2D graphics, WorldPoint point, Color color, int counter) {
+    private void drawTransport(Graphics2D graphics, WorldPoint point) {
         if (point.getPlane() != client.getPlane()) {
             return;
         }
@@ -138,7 +138,7 @@ public class SnailManModeOverlay extends Overlay {
             return;
         }
 
-        graphics.setColor(color);
+        graphics.setColor(Color.GREEN);
         graphics.fill(poly);
     }
 }

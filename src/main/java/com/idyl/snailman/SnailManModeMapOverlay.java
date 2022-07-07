@@ -56,9 +56,6 @@ public class SnailManModeMapOverlay extends Overlay {
         mapClipArea = getWorldMapClipArea(client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds());
         graphics.setClip(mapClipArea);
 
-        graphics.setColor(Color.GREEN);
-        drawOnMap(graphics, plugin.getSnailWorldPoint());
-
         try {
             BufferedImage marker = ImageIO.read(getClass().getResource("/marker.png"));
             Point point = plugin.mapWorldPointToGraphicsPoint(plugin.getSnailWorldPoint());
