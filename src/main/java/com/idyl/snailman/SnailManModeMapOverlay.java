@@ -60,6 +60,9 @@ public class SnailManModeMapOverlay extends Overlay {
             }
         }
 
+        graphics.setColor(Color.GREEN);
+        drawOnMap(graphics, plugin.getSnailWorldPoint());
+
         return null;
     }
 

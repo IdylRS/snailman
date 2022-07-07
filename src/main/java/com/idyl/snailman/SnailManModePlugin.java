@@ -201,7 +201,6 @@ public class SnailManModePlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
 		if(gameStateChanged.getGameState() == GameState.LOGGED_IN) {
-			currentPath = pathfinder.new Path(snailWorldPoint, client.getLocalPlayer().getWorldLocation(), false);
 			isLoggedIn = true;
 		}
 		else {
@@ -213,9 +212,15 @@ public class SnailManModePlugin extends Plugin
 	public void onGameTick(GameTick tick) {
 		if(!isLoggedIn) return;
 
+		if(currentPath == null) {
+			WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
+			currentPath = calculatePath(snailWorldPoint, playerPoint);
+		}
+
 		if(currentPathIndex < currentPath.getPath().size()) {
 			WorldPoint target = currentPath.getPath().get(currentPathIndex);
 			setSnailWorldPoint(target);
+			log.info(currentPathIndex+"");
 			currentPathIndex++;
 		}
 
@@ -244,19 +249,17 @@ public class SnailManModePlugin extends Plugin
 		WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
 		final int distanceFromPlayer = snailWorldPoint.distanceTo2D(playerPoint);
 
-		log.info(distanceFromPlayer+"");
-
 		if(distanceFromPlayer < 32) {
 			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
 				currentPath = calculatePath(snailWorldPoint, playerPoint);
-				currentPathIndex = 1;
+				this.currentPathIndex = 1;
 			}
 		}
 		else {
 			// Limit number of recalculations done during player movement
 			if(currentPath.getTarget().distanceTo2D(playerPoint) > 50) {
 				currentPath = calculatePath(snailWorldPoint, playerPoint);
-				currentPathIndex = 1;
+				this.currentPathIndex = 1;
 			}
 		}
 	}
@@ -269,8 +272,7 @@ public class SnailManModePlugin extends Plugin
 	}
 
 	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end) {
-		if(currentPath.loading) return currentPath;
-		log.info("Recalculate path");
+		if(currentPath != null && currentPath.loading) return currentPath;
 		return pathfinder.new Path(start, end, false);
 	}
 

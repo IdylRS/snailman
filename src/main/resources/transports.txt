@@ -4555,3 +4555,9 @@
 1617 3686 1 1616 3686 2 Walk here  0
 1616 3686 2 1615 3687 1 Add start Transport 0
 1614 3680 1 1618 3680 0 Add start Transport 0
+3232 9800 0 3231 3400 0 Walk here  0
+2683 3274 0 2775 3233 1 Examine Barrel 35800
+2772 3230 0 2683 3268 1 Add end Transport 0
+2682 3275 0 2915 3221 1 Add end Transport 0
+2917 3225 0 2683 3268 1 Examine Captain Barnaby 16432
+2917 3225 0 2915 3221 1 Walk here  0
