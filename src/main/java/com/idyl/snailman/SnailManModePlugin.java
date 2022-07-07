@@ -75,7 +75,7 @@ public class SnailManModePlugin extends Plugin
 
 	private MenuEntry lastClick;
 
-	private int RECALCULATION_THRESHOLD = 5;
+	private final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
 	private static final String TRANSPORT = ColorUtil.wrapWithColorTag("Transport", JagexColors.MENU_TARGET);
@@ -88,7 +88,7 @@ public class SnailManModePlugin extends Plugin
 	}
 
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
 		Map<SplitFlagMap.Position, byte[]> compressedRegions = new HashMap<>();
 		HashMap<WorldPoint, List<WorldPoint>> transports = new HashMap<>();
@@ -142,7 +142,7 @@ public class SnailManModePlugin extends Plugin
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void shutDown()
 	{
 		overlayManager.remove(snailManModeOverlay);
 		overlayManager.remove(snailManModeMapOverlay);
@@ -248,7 +248,7 @@ public class SnailManModePlugin extends Plugin
 		WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
 		final int distanceFromPlayer = snailWorldPoint.distanceTo2D(playerPoint);
 
-		if(distanceFromPlayer < 32) {
+		if(distanceFromPlayer < RECALCULATION_THRESHOLD) {
 			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
 				currentPath = calculatePath(snailWorldPoint, playerPoint);
 				this.currentPathIndex = 1;
@@ -274,6 +274,10 @@ public class SnailManModePlugin extends Plugin
 
 	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end) {
 		if(currentPath != null && currentPath.loading) return currentPath;
+		if(currentPath != null) currentPath.stopThread();
+
+		log.info("Recalculating path");
+
 		return pathfinder.new Path(start, end, false);
 	}
 

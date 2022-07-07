@@ -33,7 +33,7 @@ public class Pathfinder {
         try {
             Files.write(Paths.get("src/main/resources/transports.txt"), transport.concat("\n").getBytes(), StandardOpenOption.APPEND);
         }catch (IOException e) {
-
+            log.info(e.toString());
         }
     }
 
@@ -54,7 +54,7 @@ public class Pathfinder {
 
         public boolean loading;
 
-        private Thread thread;
+        private final Thread thread;
 
         public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness) {
             this.target = target;
@@ -64,7 +64,6 @@ public class Pathfinder {
             this.loading = true;
 
             thread = new Thread(this);
-
             thread.start();
         }
 
@@ -168,6 +167,7 @@ public class Pathfinder {
 
             this.loading = false;
             log.info("Path calculation completed");
+            thread.interrupt();
         }
     }
 
