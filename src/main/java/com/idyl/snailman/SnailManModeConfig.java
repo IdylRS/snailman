@@ -28,4 +28,11 @@ public interface SnailManModeConfig extends Config
 	{
 		return Color.RED;
 	}
+
+	@ConfigItem(
+			keyName = "showOnMap",
+			name = "Show Snail on World Map",
+			description = "Show where the snail is on the world map (kind of defeats the purpose but its neat)"
+	)
+	default boolean showOnMap() { return false; }
 }

@@ -203,7 +203,7 @@ public class SnailManModePlugin extends Plugin
 		if(gameStateChanged.getGameState() == GameState.LOGGED_IN) {
 			isLoggedIn = true;
 		}
-		else {
+		else if(gameStateChanged.getGameState() == GameState.LOGIN_SCREEN){
 			isLoggedIn = false;
 		}
 	}
@@ -220,7 +220,6 @@ public class SnailManModePlugin extends Plugin
 		if(currentPathIndex < currentPath.getPath().size()) {
 			WorldPoint target = currentPath.getPath().get(currentPathIndex);
 			setSnailWorldPoint(target);
-			log.info(currentPathIndex+"");
 			currentPathIndex++;
 		}
 
@@ -258,6 +257,8 @@ public class SnailManModePlugin extends Plugin
 		else {
 			// Limit number of recalculations done during player movement
 			if(currentPath.getTarget().distanceTo2D(playerPoint) > 50) {
+				if(client.isInInstancedRegion()) return;
+
 				currentPath = calculatePath(snailWorldPoint, playerPoint);
 				this.currentPathIndex = 1;
 			}

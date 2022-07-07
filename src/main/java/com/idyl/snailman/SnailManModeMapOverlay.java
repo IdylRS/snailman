@@ -11,7 +11,12 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.worldmap.WorldMapOverlay;
 
+import javax.imageio.ImageIO;
 import javax.inject.Inject;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.io.IOException;
 import java.util.List;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -42,6 +47,8 @@ public class SnailManModeMapOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        if(!config.showOnMap()) return null;
+
         if (client.getWidget(WidgetInfo.WORLD_MAP_VIEW) == null) {
             return null;
         }
@@ -49,19 +56,16 @@ public class SnailManModeMapOverlay extends Overlay {
         mapClipArea = getWorldMapClipArea(client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds());
         graphics.setClip(mapClipArea);
 
-        if (plugin.currentPath != null) {
-            boolean loading = plugin.currentPath.loading;
-            graphics.setColor(Color.RED);
-            List<WorldPoint> path = loading ? plugin.currentPath.currentBest() : plugin.currentPath.getPath();
-            if (path != null) {
-                for (WorldPoint point : path) {
-                    drawOnMap(graphics, point);
-                }
-            }
-        }
-
         graphics.setColor(Color.GREEN);
         drawOnMap(graphics, plugin.getSnailWorldPoint());
+
+        try {
+            BufferedImage marker = ImageIO.read(getClass().getResource("/marker.png"));
+            Point point = plugin.mapWorldPointToGraphicsPoint(plugin.getSnailWorldPoint());
+            graphics.drawImage(marker, point.getX() - marker.getWidth() / 2, point.getY() - marker.getHeight() / 2, null);
+        } catch (IOException e) {
+        }
+
 
         return null;
     }
