@@ -59,6 +59,9 @@ public class SnailManModePlugin extends Plugin
 	private SnailManModeConfig config;
 
 	@Inject
+	private ConfigManager configManager;
+
+	@Inject
 	private ChatMessageManager chatMessageManager;
 
 	public Pathfinder pathfinder;
@@ -75,11 +78,16 @@ public class SnailManModePlugin extends Plugin
 
 	private MenuEntry lastClick;
 
-	private final int RECALCULATION_THRESHOLD = 20;
+	private static final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
 	private static final String TRANSPORT = ColorUtil.wrapWithColorTag("Transport", JagexColors.MENU_TARGET);
 	private static final String WALK_HERE = "Walk here";
+	private static final String CONFIG_GROUP = "snailman";
+	private static final String CONFIG_KEY_SNAIL_LOC_X = "snailWorldPointX";
+	private static final String CONFIG_KEY_SNAIL_LOC_Y = "snailWorldPointY";
+	private static final String CONFIG_KEY_SNAIL_LOC_PLANE = "snailWorldPointPlane";
+	private static final WorldPoint DEFAULT_SNAIL_START = new WorldPoint(1181, 3624, 0);
 
 	@Provides
 	SnailManModeConfig provideConfig(ConfigManager configManager)
@@ -131,7 +139,7 @@ public class SnailManModePlugin extends Plugin
 
 
 
-		this.snailWorldPoint = new WorldPoint(1806, 3690, 0);
+		this.snailWorldPoint = getSavedSnailWorldPoint();
 
 		isLoggedIn = false;
 		isAlive = true;
@@ -144,6 +152,7 @@ public class SnailManModePlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		saveSnailWorldPoint();
 		overlayManager.remove(snailManModeOverlay);
 		overlayManager.remove(snailManModeMapOverlay);
 	}
@@ -152,50 +161,70 @@ public class SnailManModePlugin extends Plugin
 		return snailWorldPoint;
 	}
 
+	private WorldPoint getSavedSnailWorldPoint() {
+		final String xConfig = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_X);
+
+		if(xConfig == null || xConfig.isEmpty()) {
+			return DEFAULT_SNAIL_START;
+		}
+
+		final int x = Integer.parseInt(xConfig);
+		final int y = Integer.parseInt(configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_Y));
+		final int plane = Integer.parseInt(configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_PLANE));
+
+		return new WorldPoint(x, y, plane);
+	}
+
 	public void setSnailWorldPoint(WorldPoint point) {
 		snailWorldPoint = point;
 	}
 
-	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded event) {
-		if (client.isKeyPressed(KeyCode.KC_SHIFT) && event.getOption().equals(WALK_HERE)) {
-			addMenuEntry(event, ADD_START, TRANSPORT, 1);
-			addMenuEntry(event, ADD_END, TRANSPORT, 1);
-		}
+	private void saveSnailWorldPoint() {
+		this.configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_X, snailWorldPoint.getX());
+		this.configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_Y, snailWorldPoint.getY());
+		this.configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC_PLANE, snailWorldPoint.getPlane());
 	}
 
-	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
-		client.createMenuEntry(position)
-				.setOption(option)
-				.setTarget(target)
-				.setParam0(event.getActionParam0())
-				.setParam1(event.getActionParam1())
-				.setIdentifier(event.getIdentifier())
-				.setType(MenuAction.RUNELITE)
-				.onClick(this::onMenuOptionClicked);
-	}
+//	@Subscribe
+//	public void onMenuEntryAdded(MenuEntryAdded event) {
+//		if (client.isKeyPressed(KeyCode.KC_SHIFT) && event.getOption().equals(WALK_HERE)) {
+//			addMenuEntry(event, ADD_START, TRANSPORT, 1);
+//			addMenuEntry(event, ADD_END, TRANSPORT, 1);
+//		}
+//	}
+//
+//	private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
+//		client.createMenuEntry(position)
+//				.setOption(option)
+//				.setTarget(target)
+//				.setParam0(event.getActionParam0())
+//				.setParam1(event.getActionParam1())
+//				.setIdentifier(event.getIdentifier())
+//				.setType(MenuAction.RUNELITE)
+//				.onClick(this::onMenuOptionClicked);
+//	}
 
-	private void onMenuOptionClicked(MenuEntry entry) {
-		Player localPlayer = client.getLocalPlayer();
-
-		WorldPoint currentLocation = localPlayer.getWorldLocation();
-		if (entry.getOption().equals(ADD_START) && entry.getTarget().equals(TRANSPORT)) {
-			transportStart = currentLocation;
-		}
-
-		if (entry.getOption().equals(ADD_END) && entry.getTarget().equals(TRANSPORT)) {
-			String transport = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + " " +
-					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + " " +
-					lastClick.getOption() + " " + Text.removeTags(lastClick.getTarget()) + " " + lastClick.getIdentifier();
-			System.out.println(transport);
-			pathfinder.transports.computeIfAbsent(transportStart, k -> new ArrayList<>()).add(currentLocation);
-			pathfinder.writeTransportToFile(transport);
-		}
-
-		if (entry.getType() != MenuAction.WALK) {
-			lastClick = entry;
-		}
-	}
+//	private void onMenuOptionClicked(MenuEntry entry) {
+//		Player localPlayer = client.getLocalPlayer();
+//
+//		WorldPoint currentLocation = localPlayer.getWorldLocation();
+//		if (entry.getOption().equals(ADD_START) && entry.getTarget().equals(TRANSPORT)) {
+//			transportStart = currentLocation;
+//		}
+//
+//		if (entry.getOption().equals(ADD_END) && entry.getTarget().equals(TRANSPORT)) {
+//			String transport = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + " " +
+//					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + " " +
+//					lastClick.getOption() + " " + Text.removeTags(lastClick.getTarget()) + " " + lastClick.getIdentifier();
+//			System.out.println(transport);
+//			pathfinder.transports.computeIfAbsent(transportStart, k -> new ArrayList<>()).add(currentLocation);
+//			pathfinder.writeTransportToFile(transport);
+//		}
+//
+//		if (entry.getType() != MenuAction.WALK) {
+//			lastClick = entry;
+//		}
+//	}
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
@@ -205,6 +234,7 @@ public class SnailManModePlugin extends Plugin
 		}
 		else if(gameStateChanged.getGameState() == GameState.LOGIN_SCREEN){
 			isLoggedIn = false;
+			saveSnailWorldPoint();
 		}
 	}
 
@@ -275,6 +305,8 @@ public class SnailManModePlugin extends Plugin
 	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end) {
 		if(currentPath != null && currentPath.loading) return currentPath;
 		if(currentPath != null) currentPath.stopThread();
+
+		saveSnailWorldPoint();
 
 		log.info("Recalculating path");
 
