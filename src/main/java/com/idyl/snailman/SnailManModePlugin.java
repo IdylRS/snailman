@@ -87,7 +87,7 @@ public class SnailManModePlugin extends Plugin
 	private static final String CONFIG_GROUP = "snailman";
 	private static final String CONFIG_KEY_SNAIL_LOC = "snailWorldPoint";
 	private static final WorldPoint DEFAULT_SNAIL_START = new WorldPoint(1181, 3624, 0);
-	public static final boolean DEV_MODE = true;
+	public static final boolean DEV_MODE = false;
 
 	@Provides
 	SnailManModeConfig provideConfig(ConfigManager configManager)
