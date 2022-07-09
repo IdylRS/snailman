@@ -23,7 +23,9 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.WorldService;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
@@ -74,6 +76,11 @@ public class SnailManModePlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	private SnailManModePanel panel;
+
 	public Pathfinder pathfinder;
 	public Pathfinder.Path currentPath;
 
@@ -90,6 +97,8 @@ public class SnailManModePlugin extends Plugin
 
 	private WorldPoint transportStart;
 	private MenuEntry lastClick;
+
+	private NavigationButton navButton;
 
 	private static final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
@@ -117,6 +126,19 @@ public class SnailManModePlugin extends Plugin
 		isAlive = true;
 		overlayManager.add(snailManModeOverlay);
 		overlayManager.add(snailManModeMapOverlay);
+
+		panel = injector.getInstance(SnailManModePanel.class);
+
+		final BufferedImage icon = ImageUtil.loadImageResource(SnailManModePlugin.class, "/snail.png");
+
+		navButton = NavigationButton.builder()
+				.panel(panel)
+				.tooltip("SnailMan Mode")
+				.icon(icon)
+				.priority(90)
+				.build();
+
+		clientToolbar.addNavigation(navButton);
 	}
 
 	@Override
@@ -174,6 +196,13 @@ public class SnailManModePlugin extends Plugin
 
 		saveSnailWorldPoint();
 		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_IS_ALIVE, isAlive);
+	}
+
+	public void reset() {
+		setSnailWorldPoint(DEFAULT_SNAIL_START);
+		currentPath = null;
+		isAlive = true;
+		saveData();
 	}
 
 	@Subscribe
