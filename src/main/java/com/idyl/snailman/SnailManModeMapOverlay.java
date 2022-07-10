@@ -52,6 +52,7 @@ public class SnailManModeMapOverlay extends Overlay {
             Point point = plugin.mapWorldPointToGraphicsPoint(plugin.getSnailWorldPoint());
             graphics.drawImage(marker, point.getX() - marker.getWidth() / 2, point.getY() - marker.getHeight() / 2, null);
         } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
 

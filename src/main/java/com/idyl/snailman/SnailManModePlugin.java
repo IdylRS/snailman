@@ -1,6 +1,8 @@
 package com.idyl.snailman;
 
 import com.google.inject.Provides;
+
+import javax.imageio.ImageIO;
 import javax.inject.Inject;
 
 import com.idyl.snailman.pathfinder.CollisionMap;
@@ -170,8 +172,6 @@ public class SnailManModePlugin extends Plugin
 
 		final WorldPoint point = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC, WorldPoint.class);
 
-		log.info("Getting from profile: "+this.configManager.getRSProfileKey()+", value: "+point);
-
 		if(point == null) {
 			return DEFAULT_SNAIL_START;
 		}
@@ -185,8 +185,6 @@ public class SnailManModePlugin extends Plugin
 
 	private void saveSnailWorldPoint() {
 		if(this.configManager.getRSProfileKey() == null) return;
-
-		log.info("Saving to profile: "+this.configManager.getRSProfileKey()+", value: "+this.snailWorldPoint);
 
 		this.configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_SNAIL_LOC, snailWorldPoint);
 	}
@@ -530,14 +528,18 @@ public class SnailManModePlugin extends Plugin
 			return;
 		}
 
-		BufferedImage image = ImageUtil.getResourceStreamFromClass(getClass(), "/helm.png");
-		IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
+		try {
+			BufferedImage image = ImageIO.read(getClass().getResource("/helm.png"));
+			IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
+			snailmanIconOffset = modIcons.length;
 
-		snailmanIconOffset = modIcons.length;
+			final IndexedSprite[] newModIcons = Arrays.copyOf(modIcons, modIcons.length + 1);
+			newModIcons[newModIcons.length - 1] = indexedSprite;
 
-		final IndexedSprite[] newModIcons = Arrays.copyOf(modIcons, modIcons.length + 1);
-		newModIcons[newModIcons.length - 1] = indexedSprite;
-
-		client.setModIcons(newModIcons);
+			client.setModIcons(newModIcons);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
