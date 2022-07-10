@@ -9,16 +9,10 @@ import net.runelite.api.Point;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
-import net.runelite.client.ui.overlay.worldmap.WorldMapOverlay;
-
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
 import java.io.IOException;
-import java.util.List;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -28,9 +22,6 @@ public class SnailManModeMapOverlay extends Overlay {
     private final Client client;
     private final SnailManModePlugin plugin;
     private final SnailManModeConfig config;
-
-    @Inject
-    private WorldMapOverlay worldMapOverlay;
 
     private Area mapClipArea;
 
@@ -67,24 +58,6 @@ public class SnailManModeMapOverlay extends Overlay {
         return null;
     }
 
-    private void drawOnMap(Graphics2D graphics, WorldPoint point) {
-        Point start = plugin.mapWorldPointToGraphicsPoint(point);
-        Point end = plugin.mapWorldPointToGraphicsPoint(point.dx(1).dy(-1));
-
-        if (start == null || end == null) {
-            return;
-        }
-
-        int x = start.getX();
-        int y = start.getY();
-        final int width = end.getX() - x;
-        final int height = end.getY() - y;
-        x -= width / 2;
-        y -= height / 2;
-
-        graphics.fillRect(x, y, width, height);
-    }
-
     private Area getWorldMapClipArea(Rectangle baseRectangle) {
         final Widget overview = client.getWidget(WidgetInfo.WORLD_MAP_OVERVIEW_MAP);
         final Widget surfaceSelector = client.getWidget(WidgetInfo.WORLD_MAP_SURFACE_SELECTOR);
@@ -100,12 +73,5 @@ public class SnailManModeMapOverlay extends Overlay {
         }
 
         return clipArea;
-    }
-
-    private Rectangle getWorldMapExtent(Rectangle baseRectangle) {
-        WorldPoint topLeft = plugin.calculateMapPoint(new Point(baseRectangle.x, baseRectangle.y));
-        WorldPoint bottomRight = plugin.calculateMapPoint(
-                new Point(baseRectangle.x + baseRectangle.width, baseRectangle.y + baseRectangle.height));
-        return new Rectangle(topLeft.getX(), topLeft.getY(), bottomRight.getX() - topLeft.getX(), topLeft.getY() - bottomRight.getY());
     }
 }
