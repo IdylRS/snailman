@@ -407,7 +407,7 @@ public class SnailManModePlugin extends Plugin
 		}
 		else {
 			// Limit number of recalculations done during player movement
-			if(currentPath.getTarget().distanceTo2D(playerPoint) > 50) {
+			if(currentPath.getTarget().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD) {
 				if(client.isInInstancedRegion()) return;
 
 				currentPath = calculatePath(snailWorldPoint, playerPoint);
@@ -428,22 +428,6 @@ public class SnailManModePlugin extends Plugin
 		if(currentPath != null) currentPath.stopThread();
 
 		return pathfinder.new Path(start, end, false);
-	}
-
-	public WorldPoint calculateMapPoint(Point point) {
-		float zoom = client.getRenderOverview().getWorldMapZoom();
-		RenderOverview renderOverview = client.getRenderOverview();
-		final WorldPoint mapPoint = new WorldPoint(renderOverview.getWorldMapPosition().getX(), renderOverview.getWorldMapPosition().getY(), 0);
-		final Point middle = mapWorldPointToGraphicsPoint(mapPoint);
-
-		if (point == null || middle == null) {
-			return null;
-		}
-
-		final int dx = (int) ((point.getX() - middle.getX()) / zoom);
-		final int dy = (int) ((-(point.getY() - middle.getY())) / zoom);
-
-		return mapPoint.dx(dx).dy(dy);
 	}
 
 	public Point mapWorldPointToGraphicsPoint(WorldPoint worldPoint)
