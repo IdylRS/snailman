@@ -40,6 +40,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -102,6 +103,8 @@ public class SnailManModePlugin extends Plugin
 
 	private NavigationButton navButton;
 
+	private long lastSaveTime;
+
 	private static final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
@@ -126,6 +129,7 @@ public class SnailManModePlugin extends Plugin
 		isLoggedIn = false;
 		onSeasonalWorld = false;
 		isAlive = true;
+		lastSaveTime = Instant.EPOCH.getEpochSecond();
 		overlayManager.add(snailManModeOverlay);
 		overlayManager.add(snailManModeMapOverlay);
 
@@ -194,6 +198,8 @@ public class SnailManModePlugin extends Plugin
 
 		saveSnailWorldPoint();
 		configManager.setRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_IS_ALIVE, isAlive);
+
+		lastSaveTime = Instant.EPOCH.getEpochSecond();
 	}
 
 	public void reset() {
@@ -266,6 +272,10 @@ public class SnailManModePlugin extends Plugin
 			}
 		}
 		moveSnailTowardsPlayer();
+
+		if(Instant.EPOCH.getEpochSecond() - lastSaveTime >= 60 && isLoggedIn) {
+			saveData();
+		}
 	}
 
 	@Subscribe
