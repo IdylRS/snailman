@@ -111,19 +111,24 @@ public class SnailManModeOverlay extends Overlay {
             return;
         }
 
-        Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-        if (poly != null)
-        {
-            OverlayUtil.renderPolygon(graphics, poly, color, new Color(0, 0, 0, 1), borderStroke);
-        }
-
         try {
             BufferedImage snailShell = ImageIO.read(getClass().getResource("/snail_shell.png"));
             Point canvasImageLocation = Perspective.getCanvasImageLocation(client, lp, snailShell, 75);
+
+            if(canvasImageLocation == null) {
+                return;
+            }
+
             OverlayUtil.renderImageLocation(graphics, canvasImageLocation, snailShell);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
+        }
+
+        Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+        if (poly != null)
+        {
+            OverlayUtil.renderPolygon(graphics, poly, color, new Color(0, 0, 0, 1), borderStroke);
         }
     }
 

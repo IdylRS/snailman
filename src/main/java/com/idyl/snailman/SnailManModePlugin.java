@@ -169,6 +169,8 @@ public class SnailManModePlugin extends Plugin
 		if(!isLocalPlayer) return;
 
 		chatMessage.getMessageNode().setName(getImgTag(snailmanIconOffset)+Text.removeTags(name));
+
+		log.info("Adding snailman icon");
 	}
 
 	public WorldPoint getSnailWorldPoint() {
@@ -299,7 +301,6 @@ public class SnailManModePlugin extends Plugin
 		{
 			case PRIVATECHAT:
 			case MODPRIVATECHAT:
-				// Note this is unable to change icon on PMs if they are not a friend or in friends chat
 			case FRIENDSCHAT:
 				if (!onSeasonalWorld && isSelf)
 				{
