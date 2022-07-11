@@ -10,16 +10,6 @@ import java.awt.*;
 public interface SnailManModeConfig extends Config
 {
 	@ConfigItem(
-		keyName = "snailName",
-		name = "Snail Name",
-		description = "The name you'd like to give your snail"
-	)
-	default String name()
-	{
-		return "Snail";
-	}
-
-	@ConfigItem(
 			keyName = "snailColor",
 			name = "Snail Color",
 			description = "The color of the snail tile"

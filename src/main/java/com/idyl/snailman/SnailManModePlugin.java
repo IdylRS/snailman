@@ -11,6 +11,8 @@ import com.idyl.snailman.pathfinder.SplitFlagMap;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.Point;
+import net.runelite.api.coords.Direction;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
@@ -40,6 +42,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.List;
@@ -114,6 +117,7 @@ public class SnailManModePlugin extends Plugin
 	private static final String CONFIG_KEY_SNAIL_LOC = "snailWorldPoint";
 	private static final String CONFIG_KEY_IS_ALIVE = "isAlive";
 	private static final WorldPoint DEFAULT_SNAIL_START = new WorldPoint(1181, 3624, 0);
+
 	public static final boolean DEV_MODE = false;
 
 	@Provides

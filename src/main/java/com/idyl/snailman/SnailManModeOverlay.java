@@ -8,8 +8,11 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.api.Point;
 
+import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 @Slf4j
 public class SnailManModeOverlay extends Overlay {
@@ -89,11 +92,11 @@ public class SnailManModeOverlay extends Overlay {
 
         WorldPoint snailPoint = plugin.getSnailWorldPoint();
 
-        drawTile(graphics, snailPoint, config.color(), config.name(), new BasicStroke((float) 2));
+        drawTile(graphics, snailPoint, config.color(), new BasicStroke((float) 2));
         return null;
     }
 
-    private void drawTile(Graphics2D graphics, WorldPoint point, Color color, String name, Stroke borderStroke)
+    private void drawTile(Graphics2D graphics, WorldPoint point, Color color, Stroke borderStroke)
     {
         WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
@@ -114,12 +117,13 @@ public class SnailManModeOverlay extends Overlay {
             OverlayUtil.renderPolygon(graphics, poly, color, new Color(0, 0, 0, 1), borderStroke);
         }
 
-        if(!name.equals("")) {
-            Point canvasTextLocation = Perspective.getCanvasTextLocation(client, graphics, lp, name, 0);
-            if (canvasTextLocation != null)
-            {
-                OverlayUtil.renderTextLocation(graphics, canvasTextLocation, name, color);
-            }
+        try {
+            BufferedImage snailShell = ImageIO.read(getClass().getResource("/snail_shell.png"));
+            Point canvasImageLocation = Perspective.getCanvasImageLocation(client, lp, snailShell, 75);
+            OverlayUtil.renderImageLocation(graphics, canvasImageLocation, snailShell);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
