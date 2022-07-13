@@ -85,8 +85,6 @@ public class SnailManModePlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	private SnailManModePanel panel;
-
 	public Pathfinder pathfinder;
 	public Pathfinder.Path currentPath;
 
@@ -103,8 +101,6 @@ public class SnailManModePlugin extends Plugin
 
 	private WorldPoint transportStart;
 	private MenuEntry lastClick;
-
-	private NavigationButton navButton;
 
 	private long lastSaveTime;
 
@@ -137,11 +133,11 @@ public class SnailManModePlugin extends Plugin
 		overlayManager.add(snailManModeOverlay);
 		overlayManager.add(snailManModeMapOverlay);
 
-		panel = injector.getInstance(SnailManModePanel.class);
+		SnailManModePanel panel = injector.getInstance(SnailManModePanel.class);
 
 		final BufferedImage icon = ImageUtil.loadImageResource(SnailManModePlugin.class, "/snail.png");
 
-		navButton = NavigationButton.builder()
+		NavigationButton navButton = NavigationButton.builder()
 				.panel(panel)
 				.tooltip("SnailMan Mode")
 				.icon(icon)
@@ -169,8 +165,6 @@ public class SnailManModePlugin extends Plugin
 		if(!isLocalPlayer) return;
 
 		chatMessage.getMessageNode().setName(getImgTag(snailmanIconOffset)+Text.removeTags(name));
-
-		log.info("Adding snailman icon");
 	}
 
 	public WorldPoint getSnailWorldPoint() {
@@ -231,7 +225,7 @@ public class SnailManModePlugin extends Plugin
 			String savedAlive = configManager.getRSProfileConfiguration(CONFIG_GROUP, CONFIG_KEY_IS_ALIVE);
 			setSnailWorldPoint(point);
 			currentPathIndex = 1;
-			isAlive = savedAlive == null ? true : Boolean.parseBoolean(savedAlive);
+			isAlive = savedAlive == null || Boolean.parseBoolean(savedAlive);
 			isLoggedIn = true;
 			onSeasonalWorld = isSeasonalWorld(client.getWorld());
 		}
