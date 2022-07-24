@@ -1,7 +1,6 @@
 package com.idyl.snailman;
 
 import net.runelite.api.Client;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.ui.overlay.Overlay;
@@ -9,10 +8,10 @@ import net.runelite.api.Point;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
-import javax.imageio.ImageIO;
+import net.runelite.client.util.ImageUtil;
+
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -47,14 +46,10 @@ public class SnailManModeMapOverlay extends Overlay {
         mapClipArea = getWorldMapClipArea(client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds());
         graphics.setClip(mapClipArea);
 
-        try {
-            BufferedImage marker = ImageIO.read(getClass().getResource("/marker.png"));
-            Point point = plugin.mapWorldPointToGraphicsPoint(plugin.getSnailWorldPoint());
-            graphics.drawImage(marker, point.getX() - marker.getWidth() / 2, point.getY() - marker.getHeight() / 2, null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
+        BufferedImage marker = ImageUtil.loadImageResource(getClass(), "/marker.png");
+        Point point = plugin.mapWorldPointToGraphicsPoint(plugin.getSnailWorldPoint());
+        graphics.drawImage(marker, point.getX() - marker.getWidth() / 2, point.getY() - marker.getHeight() / 2, null);
 
         return null;
     }

@@ -7,12 +7,11 @@ import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.api.Point;
+import net.runelite.client.util.ImageUtil;
 
-import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 @Slf4j
 public class SnailManModeOverlay extends Overlay {
@@ -111,19 +110,15 @@ public class SnailManModeOverlay extends Overlay {
             return;
         }
 
-        try {
-            BufferedImage snailShell = ImageIO.read(getClass().getResource("/snail_shell.png"));
-            Point canvasImageLocation = Perspective.getCanvasImageLocation(client, lp, snailShell, 75);
 
-            if(canvasImageLocation == null) {
-                return;
-            }
+        BufferedImage snailShell = ImageUtil.loadImageResource(getClass(), "/snail_shell.png");
+        Point canvasImageLocation = Perspective.getCanvasImageLocation(client, lp, snailShell, 75);
 
-            OverlayUtil.renderImageLocation(graphics, canvasImageLocation, snailShell);
+        if(canvasImageLocation == null) {
+            return;
         }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        OverlayUtil.renderImageLocation(graphics, canvasImageLocation, snailShell);
 
         Polygon poly = Perspective.getCanvasTilePoly(client, lp);
         if (poly != null)

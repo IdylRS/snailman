@@ -2,7 +2,6 @@ package com.idyl.snailman;
 
 import com.google.inject.Provides;
 
-import javax.imageio.ImageIO;
 import javax.inject.Inject;
 
 import com.idyl.snailman.pathfinder.CollisionMap;
@@ -11,8 +10,6 @@ import com.idyl.snailman.pathfinder.SplitFlagMap;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.coords.Direction;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
@@ -42,7 +39,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.List;
@@ -84,6 +80,8 @@ public class SnailManModePlugin extends Plugin
 
 	@Inject
 	private ClientToolbar clientToolbar;
+
+	private NavigationButton navButton;
 
 	public Pathfinder pathfinder;
 	public Pathfinder.Path currentPath;
@@ -137,7 +135,7 @@ public class SnailManModePlugin extends Plugin
 
 		final BufferedImage icon = ImageUtil.loadImageResource(SnailManModePlugin.class, "/snail.png");
 
-		NavigationButton navButton = NavigationButton.builder()
+		navButton = NavigationButton.builder()
 				.panel(panel)
 				.tooltip("SnailMan Mode")
 				.icon(icon)
@@ -152,6 +150,7 @@ public class SnailManModePlugin extends Plugin
 	{
 		overlayManager.remove(snailManModeOverlay);
 		overlayManager.remove(snailManModeMapOverlay);
+		clientToolbar.removeNavigation(navButton);
 	}
 
 	private void addSnailmanIcon(ChatMessage chatMessage)
@@ -521,18 +520,13 @@ public class SnailManModePlugin extends Plugin
 			return;
 		}
 
-		try {
-			BufferedImage image = ImageIO.read(getClass().getResource("/helm.png"));
-			IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
-			snailmanIconOffset = modIcons.length;
+		BufferedImage image = ImageUtil.loadImageResource(getClass(),"/helm.png");
+		IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
+		snailmanIconOffset = modIcons.length;
 
-			final IndexedSprite[] newModIcons = Arrays.copyOf(modIcons, modIcons.length + 1);
-			newModIcons[newModIcons.length - 1] = indexedSprite;
+		final IndexedSprite[] newModIcons = Arrays.copyOf(modIcons, modIcons.length + 1);
+		newModIcons[newModIcons.length - 1] = indexedSprite;
 
-			client.setModIcons(newModIcons);
-		}
-		catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		client.setModIcons(newModIcons);
 	}
 }
