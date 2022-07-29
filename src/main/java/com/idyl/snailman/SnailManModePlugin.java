@@ -102,6 +102,8 @@ public class SnailManModePlugin extends Plugin
 
 	private long lastSaveTime;
 
+	private int tickCount = 0;
+
 	private static final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
@@ -237,9 +239,15 @@ public class SnailManModePlugin extends Plugin
 
 	@Subscribe
 	public void onGameTick(GameTick tick) {
-		if(!isLoggedIn) return;
+		if(!isLoggedIn || config.pauseSnail()) return;
+
+		tickCount++;
 
 		WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
+
+		long distanceToSnail = playerPoint.distanceTo2D(snailWorldPoint);
+
+		if(tickCount % config.moveSpeed() != 0 && distanceToSnail > RECALCULATION_THRESHOLD) return;
 
 		if(currentPath == null) {
 			currentPath = calculatePath(snailWorldPoint, playerPoint);

@@ -25,4 +25,19 @@ public interface SnailManModeConfig extends Config
 			description = "Show where the snail is on the world map (kind of defeats the purpose but its neat)"
 	)
 	default boolean showOnMap() { return false; }
+
+	@ConfigItem(
+			keyName = "pauseSnail",
+			name = "Pause Snail",
+			description = "Pause the snail so that it stops following you"
+	)
+	default boolean pauseSnail() { return false; }
+
+	@ConfigItem(
+			keyName = "moveSpeed",
+			name = "Move Speed",
+			description = "How many ticks it takes the snail to move 1 tile"
+
+	)
+	default int moveSpeed() { return 1; }
 }
