@@ -21,6 +21,8 @@ public class SnailManModeOverlay extends Overlay {
     private final SnailManModeConfig config;
     private final SnailManModePlugin plugin;
 
+    BufferedImage snailShell = null;
+
     @Inject
     private SnailManModeOverlay(Client client, SnailManModeConfig config, SnailManModePlugin plugin) {
         this.client = client;
@@ -111,7 +113,7 @@ public class SnailManModeOverlay extends Overlay {
         }
 
 
-        BufferedImage snailShell = ImageUtil.loadImageResource(getClass(), "/snail_shell.png");
+        BufferedImage snailShell = getSnailImage();
         Point canvasImageLocation = Perspective.getCanvasImageLocation(client, lp, snailShell, 75);
 
         if(canvasImageLocation == null) {
@@ -144,5 +146,12 @@ public class SnailManModeOverlay extends Overlay {
 
         graphics.setColor(Color.GREEN);
         graphics.fill(poly);
+    }
+
+    private BufferedImage getSnailImage() {
+        if (snailShell == null) {
+            snailShell = ImageUtil.loadImageResource(getClass(), "/snail_shell.png");
+        }
+        return snailShell;
     }
 }
