@@ -20,6 +20,14 @@ public interface SnailManModeConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "speedBoost",
+			name = "Speed Boost",
+			description = "Snail moves 1 tile per tick when it gets close to you"
+
+	)
+	default boolean speedBoost() { return false; }
+
+	@ConfigItem(
 			keyName = "showOnMap",
 			name = "Show Snail on World Map",
 			description = "Show where the snail is on the world map (kind of defeats the purpose but its neat)"

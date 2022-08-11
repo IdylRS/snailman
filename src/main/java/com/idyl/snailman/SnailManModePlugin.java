@@ -246,8 +246,9 @@ public class SnailManModePlugin extends Plugin
 		WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
 
 		long distanceToSnail = playerPoint.distanceTo2D(snailWorldPoint);
+		boolean snailShouldMove = tickCount % config.moveSpeed() == 0 || (distanceToSnail <= RECALCULATION_THRESHOLD && config.speedBoost());
 
-		if(tickCount % config.moveSpeed() != 0 && distanceToSnail > RECALCULATION_THRESHOLD) return;
+		if(!snailShouldMove) return;
 
 		if(currentPath == null) {
 			currentPath = calculatePath(snailWorldPoint, playerPoint);
