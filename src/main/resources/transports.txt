@@ -4644,3 +4644,19 @@
 3568 9683 3 3554 3284 0 Walk here  0
 3557 3298 0 3578 9706 3 Add start Transport 0
 3578 9706 3 3559 3296 0 Climb-up Staircase 20672
+3730 5683 0 3732 5682 0 Add start Transport 0
+3733 5681 0 3733 5679 0 Walk here  0
+3755 5672 0 3755 5675 0 Climb Ladder 19045
+3757 5676 0 3757 5678 0 Add start Transport 0
+3759 5670 0 3765 5671 0 Add start Transport 0
+3765 5671 0 3759 5670 0 Add end Transport 0
+3755 5675 0 3755 5672 0 Add end Transport 0
+3757 5678 0 3757 5676 0 Walk here  0
+3733 5679 0 3733 5681 0 Add start Transport 0
+3732 5682 0 3730 5683 0 Add start Transport 0
+3046 9757 0 3046 9756 0 Add end Transport 0
+3046 9756 0 3046 9757 0 Walk here  0
+3021 9739 0 3021 3339 0 Mark tile  0
+3021 3339 0 3021 9739 0 Mark tile  0
+3019 9733 0 3019 9732 0 Add end Transport 0
+3019 9732 0 3019 9733 0 Add start Transport 0

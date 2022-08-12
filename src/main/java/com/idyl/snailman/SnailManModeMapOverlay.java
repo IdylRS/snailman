@@ -24,6 +24,8 @@ public class SnailManModeMapOverlay extends Overlay {
 
     private Area mapClipArea;
 
+    private BufferedImage mapIcon;
+
     @Inject
     private SnailManModeMapOverlay(Client client, SnailManModePlugin plugin, SnailManModeConfig config) {
         this.client = client;
@@ -46,12 +48,19 @@ public class SnailManModeMapOverlay extends Overlay {
         mapClipArea = getWorldMapClipArea(client.getWidget(WidgetInfo.WORLD_MAP_VIEW).getBounds());
         graphics.setClip(mapClipArea);
 
-
-        BufferedImage marker = ImageUtil.loadImageResource(getClass(), "/marker.png");
+        BufferedImage marker = getMapIconImage();
         Point point = plugin.mapWorldPointToGraphicsPoint(plugin.getSnailWorldPoint());
         graphics.drawImage(marker, point.getX() - marker.getWidth() / 2, point.getY() - marker.getHeight() / 2, null);
 
         return null;
+    }
+
+    private BufferedImage getMapIconImage() {
+        if(mapIcon == null) {
+            mapIcon = ImageUtil.loadImageResource(getClass(), "/marker.png");
+        }
+
+        return mapIcon;
     }
 
     private Area getWorldMapClipArea(Rectangle baseRectangle) {
