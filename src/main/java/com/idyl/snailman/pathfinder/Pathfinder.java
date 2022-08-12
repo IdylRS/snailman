@@ -54,6 +54,8 @@ public class Pathfinder {
 
         public boolean loading;
 
+        public long distance;
+
         private final Thread thread;
 
         public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness) {
@@ -62,6 +64,7 @@ public class Pathfinder {
             this.avoidWilderness = avoidWilderness;
             this.nearest = null;
             this.loading = true;
+            this.distance = Integer.MAX_VALUE;
 
             thread = new Thread(this);
             thread.start();
@@ -156,6 +159,7 @@ public class Pathfinder {
                 if (nearest == null || distance < bestDistance) {
                     nearest = node;
                     bestDistance = distance;
+                    this.distance = distance;
                 }
 
                 addNeighbors(node);
