@@ -104,6 +104,8 @@ public class SnailManModePlugin extends Plugin
 
 	private int tickCount = 0;
 
+	private WorldPoint lastPlayerPoint;
+
 	private static final int RECALCULATION_THRESHOLD = 20;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
@@ -248,6 +250,8 @@ public class SnailManModePlugin extends Plugin
 		long distanceToSnail = playerPoint.distanceTo2D(snailWorldPoint);
 		boolean snailShouldMove = tickCount % config.moveSpeed() == 0 || (distanceToSnail <= RECALCULATION_THRESHOLD && config.speedBoost());
 
+		if(lastPlayerPoint == null) lastPlayerPoint = playerPoint;
+
 		if(!snailShouldMove) return;
 
 		if(currentPath == null) {
@@ -256,7 +260,7 @@ public class SnailManModePlugin extends Plugin
 			return;
 		}
 
-		if(currentPathIndex < currentPath.getPath().size() && currentPath.distance <= 1) {
+		if(currentPathIndex < currentPath.getPath().size() && currentPath.distance <= 20) {
 			WorldPoint target = currentPath.getPath().get(currentPathIndex);
 			setSnailWorldPoint(target);
 			currentPathIndex++;
@@ -283,6 +287,8 @@ public class SnailManModePlugin extends Plugin
 		}
 		recalculatePath();
 
+		lastPlayerPoint = playerPoint;
+
 		if(Instant.EPOCH.getEpochSecond() - lastSaveTime >= 60 && isLoggedIn) {
 			saveData();
 		}
@@ -306,6 +312,7 @@ public class SnailManModePlugin extends Plugin
 			case PRIVATECHAT:
 			case MODPRIVATECHAT:
 			case FRIENDSCHAT:
+			case CLAN_CHAT:
 				if (!onSeasonalWorld && isSelf)
 				{
 					addSnailmanIcon(chatMessage);
@@ -415,38 +422,29 @@ public class SnailManModePlugin extends Plugin
 	private void recalculatePath() {
 		if(!isLoggedIn) return;
 
+		if(client.isInInstancedRegion()) {
+			currentPath = null;
+			return;
+		}
+
 		WorldPoint playerPoint = client.getLocalPlayer().getWorldLocation();
 		final int distanceFromPlayer = snailWorldPoint.distanceTo2D(playerPoint);
 
-		if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
-			if(client.isInInstancedRegion()) {
-				currentPath = null;
-				return;
+		boolean forceRecalc = lastPlayerPoint.getPlane() != playerPoint.getPlane();
+
+		if(distanceFromPlayer < RECALCULATION_THRESHOLD) {
+			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
+				currentPath = calculatePath(snailWorldPoint, playerPoint, true);
+				this.currentPathIndex = 1;
 			}
-
-			boolean force = distanceFromPlayer < RECALCULATION_THRESHOLD;
-			currentPath = calculatePath(snailWorldPoint, playerPoint, force);
-			this.currentPathIndex = 1;
 		}
-
-//		if(distanceFromPlayer < RECALCULATION_THRESHOLD) {
-//			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
-//				currentPath = calculatePath(snailWorldPoint, playerPoint);
-//				this.currentPathIndex = 1;
-//			}
-//		}
-//		else {
-//			// Limit number of recalculations done during player movement
-//			if(currentPath.getTarget().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD) {
-//				if(client.isInInstancedRegion()) {
-//					currentPath = null;
-//					return;
-//				}
-//
-//				currentPath = calculatePath(snailWorldPoint, playerPoint);
-//				this.currentPathIndex = 1;
-//			}
-//		}
+		else {
+			// Limit number of recalculations done during player movement
+			if(currentPath.getTarget().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD || forceRecalc) {
+				currentPath = calculatePath(snailWorldPoint, playerPoint, forceRecalc);
+				this.currentPathIndex = 1;
+			}
+		}
 	}
 
 	private boolean checkTouching() {
@@ -461,8 +459,6 @@ public class SnailManModePlugin extends Plugin
 		if(currentPath != null) currentPath.stopThread();
 
 		if(client.isInInstancedRegion()) return null;
-
-		log.info("calc path...");
 
 		return pathfinder.new Path(start, end, false);
 	}

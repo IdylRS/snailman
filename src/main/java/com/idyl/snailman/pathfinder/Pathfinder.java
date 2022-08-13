@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -146,6 +147,9 @@ public class Pathfinder {
 
             int bestDistance = Integer.MAX_VALUE;
 
+            long maxExecutionTime = 1500;
+            long startTime = Instant.now().toEpochMilli();
+
             while (!boundary.isEmpty() && !Thread.interrupted()) {
                 Node node = boundary.remove(0);
 
@@ -170,7 +174,6 @@ public class Pathfinder {
             }
 
             this.loading = false;
-            log.info("Path calculation completed");
             thread.interrupt();
         }
     }
