@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -54,17 +55,35 @@ public class Pathfinder {
 
         public boolean loading;
 
+        public boolean valid = false;
+
         public long distance;
 
         private final Thread thread;
 
-        public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness) {
+        public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness, List<WorldPoint> existingPath) {
             this.target = target;
             this.start = new Node(start, null);
             this.avoidWilderness = avoidWilderness;
             this.nearest = null;
             this.loading = true;
             this.distance = Integer.MAX_VALUE;
+            this.valid = false;
+
+            if(existingPath  != null) {
+                Node prev = null;
+                boolean foundStart = false;
+                for(int i = 0; i < existingPath.size(); i++) {
+                    WorldPoint point = existingPath.get(i);
+
+                    if(!point.equals(start) && !foundStart) continue;
+                    foundStart = true;
+
+                    Node n = new Node(existingPath.get(i), prev);
+                    boundary.add(n);
+                    prev = n;
+                }
+            }
 
             thread = new Thread(this);
             thread.start();
@@ -142,16 +161,21 @@ public class Pathfinder {
 
         @Override
         public void run() {
-            boundary.add(start);
+            if(boundary.isEmpty()) boundary.add(start);
 
             int bestDistance = Integer.MAX_VALUE;
 
+            long startTime = Instant.now().toEpochMilli();
+
             while (!boundary.isEmpty() && !Thread.interrupted()) {
+                long elapsed = Instant.now().toEpochMilli() - startTime;
+
                 Node node = boundary.remove(0);
 
                 if (node.position.equals(target)) {
                     this.path = node.path();
                     this.loading = false;
+                    this.valid = true;
                     return;
                 }
 
@@ -170,7 +194,7 @@ public class Pathfinder {
             }
 
             this.loading = false;
-            log.info("Path calculation completed");
+            long elapsed = Instant.now().toEpochMilli() - startTime;
             thread.interrupt();
         }
     }
