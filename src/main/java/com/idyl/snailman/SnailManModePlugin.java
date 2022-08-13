@@ -96,6 +96,8 @@ public class SnailManModePlugin extends Plugin
 
 	private boolean isLoggedIn;
 	private boolean isAlive;
+	private boolean isDying;
+	private WorldPoint deathPoint;
 
 	private WorldPoint transportStart;
 	private MenuEntry lastClick;
@@ -131,6 +133,7 @@ public class SnailManModePlugin extends Plugin
 		isLoggedIn = false;
 		onSeasonalWorld = false;
 		isAlive = true;
+		isDying = false;
 		lastSaveTime = Instant.EPOCH.getEpochSecond();
 		overlayManager.add(snailManModeOverlay);
 		overlayManager.add(snailManModeMapOverlay);
@@ -209,6 +212,8 @@ public class SnailManModePlugin extends Plugin
 		setSnailWorldPoint(DEFAULT_SNAIL_START);
 		currentPath = null;
 		isAlive = true;
+		isDying = false;
+		deathPoint = null;
 		saveData();
 	}
 
@@ -273,12 +278,17 @@ public class SnailManModePlugin extends Plugin
 						.append(ChatColorType.NORMAL);
 
 			if(isAlive) {
+				isDying = true;
+				deathPoint = playerPoint;
 				chatMessageManager.queue(QueuedMessage.builder()
 						.type(ChatMessageType.GAMEMESSAGE)
 						.runeLiteFormattedMessage(message.build())
 						.build());
 
 				client.playSoundEffect(SoundEffectID.ATTACK_HIT);
+
+				client.getLocalPlayer().setAnimation(AnimationID.DEATH);
+				client.getLocalPlayer().setAnimationFrame(0);
 
 				isAlive = false;
 				clientThread.invoke(() -> client.runScript(ScriptID.CHAT_PROMPT_INIT));
@@ -291,6 +301,13 @@ public class SnailManModePlugin extends Plugin
 
 		if(Instant.EPOCH.getEpochSecond() - lastSaveTime >= 60 && isLoggedIn) {
 			saveData();
+		}
+
+		if(isDying) {
+			if(!deathPoint.equals(playerPoint)) {
+				isDying = false;
+				client.getLocalPlayer().setAnimation(AnimationID.IDLE);
+			}
 		}
 	}
 
@@ -343,6 +360,20 @@ public class SnailManModePlugin extends Plugin
 	public void onBeforeRender(BeforeRender event)
 	{
 		updateChatbox();
+	}
+
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event)
+	{
+		if (event.getActor() instanceof Player)
+		{
+			final Player player = (Player) event.getActor();
+
+			if(isDying) {
+				isDying = false;
+				client.getLocalPlayer().setAnimation(AnimationID.IDLE);
+			}
+		}
 	}
 
 	private void addMenuEntry(MenuEntryAdded event, String option) {
