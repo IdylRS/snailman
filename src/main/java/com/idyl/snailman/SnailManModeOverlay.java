@@ -11,6 +11,7 @@ import net.runelite.client.util.ImageUtil;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.util.List;
 import java.awt.image.BufferedImage;
 
 @Slf4j
@@ -93,20 +94,20 @@ public class SnailManModeOverlay extends Overlay {
 
         WorldPoint snailPoint = plugin.getSnailWorldPoint();
 
+        if(SnailManModePlugin.DEV_MODE) {
+            List<WorldPoint> path = plugin.currentPath.getPath();
+            for (WorldPoint point : path) {
+                drawTile(graphics, point, Color.GREEN, new BasicStroke((float) 2));
+            }
+        }
+
         drawTile(graphics, snailPoint, config.color(), new BasicStroke((float) 2));
+        drawImg(graphics, snailPoint);
         return null;
     }
 
     private void drawTile(Graphics2D graphics, WorldPoint point, Color color, Stroke borderStroke)
     {
-        if(plugin.currentPath != null) {
-            List path = plugin.currentPath.getPath();
-                for (WorldPoint point : path) {
-                    drawTile(graphics, point, color, counter++, showTiles);
-                }
-            }
-        }
-
         WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
         if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
@@ -120,6 +121,19 @@ public class SnailManModeOverlay extends Overlay {
             return;
         }
 
+        Polygon poly = Perspective.getCanvasTilePoly(client, lp);
+        if (poly != null)
+        {
+            OverlayUtil.renderPolygon(graphics, poly, color, new Color(0, 0, 0, 1), borderStroke);
+        }
+    }
+
+    private void drawImg(Graphics2D graphics, WorldPoint point) {
+        LocalPoint lp = LocalPoint.fromWorld(client, point);
+        if (lp == null)
+        {
+            return;
+        }
 
         BufferedImage snailShell = getSnailImage();
         Point canvasImageLocation = Perspective.getCanvasImageLocation(client, lp, snailShell, 75);
@@ -129,12 +143,6 @@ public class SnailManModeOverlay extends Overlay {
         }
 
         OverlayUtil.renderImageLocation(graphics, canvasImageLocation, snailShell);
-
-        Polygon poly = Perspective.getCanvasTilePoly(client, lp);
-        if (poly != null)
-        {
-            OverlayUtil.renderPolygon(graphics, poly, color, new Color(0, 0, 0, 1), borderStroke);
-        }
     }
 
     private void drawTransport(Graphics2D graphics, WorldPoint point) {
