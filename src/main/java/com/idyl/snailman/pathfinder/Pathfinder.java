@@ -59,13 +59,22 @@ public class Pathfinder {
 
         private final Thread thread;
 
-        public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness) {
+        public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness, List<WorldPoint> existingPath) {
             this.target = target;
             this.start = new Node(start, null);
             this.avoidWilderness = avoidWilderness;
             this.nearest = null;
             this.loading = true;
             this.distance = Integer.MAX_VALUE;
+
+            if(existingPath  != null) {
+                Node prev = null;
+                for(int i = 0; i < existingPath.size(); i++) {
+                    Node n = new Node(existingPath.get(i), prev);
+                    boundary.add(n);
+                    prev = n;
+                }
+            }
 
             thread = new Thread(this);
             thread.start();
@@ -143,7 +152,7 @@ public class Pathfinder {
 
         @Override
         public void run() {
-            boundary.add(start);
+            if(boundary.isEmpty()) boundary.add(start);
 
             int bestDistance = Integer.MAX_VALUE;
 

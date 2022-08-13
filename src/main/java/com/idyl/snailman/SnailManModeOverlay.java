@@ -99,6 +99,14 @@ public class SnailManModeOverlay extends Overlay {
 
     private void drawTile(Graphics2D graphics, WorldPoint point, Color color, Stroke borderStroke)
     {
+        if(plugin.currentPath != null) {
+            List path = plugin.currentPath.getPath();
+                for (WorldPoint point : path) {
+                    drawTile(graphics, point, color, counter++, showTiles);
+                }
+            }
+        }
+
         WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
         if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)

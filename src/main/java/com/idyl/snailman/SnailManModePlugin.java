@@ -256,7 +256,7 @@ public class SnailManModePlugin extends Plugin
 
 		if(currentPath == null) {
 			boolean force = distanceToSnail < RECALCULATION_THRESHOLD;
-			currentPath = calculatePath(snailWorldPoint, playerPoint, force);
+			currentPath = calculatePath(snailWorldPoint, playerPoint, force, false);
 			return;
 		}
 
@@ -434,14 +434,15 @@ public class SnailManModePlugin extends Plugin
 
 		if(distanceFromPlayer < RECALCULATION_THRESHOLD) {
 			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
-				currentPath = calculatePath(snailWorldPoint, playerPoint, true);
+				currentPath = calculatePath(snailWorldPoint, playerPoint, true, false);
 				this.currentPathIndex = 1;
 			}
 		}
 		else {
 			// Limit number of recalculations done during player movement
 			if(currentPath.getTarget().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD || forceRecalc) {
-				currentPath = calculatePath(snailWorldPoint, playerPoint, forceRecalc);
+				boolean useExistingPath = lastPlayerPoint.distanceTo(playerPoint) > 30;
+				currentPath = calculatePath(snailWorldPoint, playerPoint, forceRecalc, useExistingPath);
 				this.currentPathIndex = 1;
 			}
 		}
@@ -454,13 +455,15 @@ public class SnailManModePlugin extends Plugin
 		return distanceFromPlayer <= 0;
 	}
 
-	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end, boolean force) {
+	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end, boolean force, boolean useExisting) {
 		if(currentPath != null && currentPath.loading && !force) return currentPath;
 		if(currentPath != null) currentPath.stopThread();
 
 		if(client.isInInstancedRegion()) return null;
 
-		return pathfinder.new Path(start, end, false);
+		List<WorldPoint> existingPath = currentPath == null ? null : currentPath.getPath();
+
+		return pathfinder.new Path(start, end, false, existingPath);
 	}
 
 	public Point mapWorldPointToGraphicsPoint(WorldPoint worldPoint)
