@@ -94,7 +94,7 @@ public class SnailManModeOverlay extends Overlay {
 
         WorldPoint snailPoint = plugin.getSnailWorldPoint();
 
-        if(SnailManModePlugin.DEV_MODE) {
+        if(SnailManModePlugin.DEV_MODE && plugin.currentPath != null) {
             List<WorldPoint> path = plugin.currentPath.getPath();
             for (WorldPoint point : path) {
                 drawTile(graphics, point, Color.GREEN, new BasicStroke((float) 2));

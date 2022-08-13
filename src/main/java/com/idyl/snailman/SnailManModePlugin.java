@@ -260,7 +260,7 @@ public class SnailManModePlugin extends Plugin
 			return;
 		}
 
-		if(currentPathIndex < currentPath.getPath().size() && currentPath.distance <= 20) {
+		if(currentPathIndex < currentPath.getPath().size() && currentPath.valid) {
 			WorldPoint target = currentPath.getPath().get(currentPathIndex);
 			setSnailWorldPoint(target);
 			currentPathIndex++;
@@ -432,6 +432,10 @@ public class SnailManModePlugin extends Plugin
 
 		boolean forceRecalc = lastPlayerPoint.getPlane() != playerPoint.getPlane();
 
+		if(currentPath != null && !currentPath.valid && lastPlayerPoint.distanceTo(playerPoint) < 20) {
+			return;
+		}
+
 		if(distanceFromPlayer < RECALCULATION_THRESHOLD) {
 			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
 				currentPath = calculatePath(snailWorldPoint, playerPoint, true, false);
@@ -441,7 +445,7 @@ public class SnailManModePlugin extends Plugin
 		else {
 			// Limit number of recalculations done during player movement
 			if(currentPath.getTarget().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD || forceRecalc) {
-				boolean useExistingPath = lastPlayerPoint.distanceTo(playerPoint) > 30;
+				boolean useExistingPath = lastPlayerPoint.distanceTo(playerPoint) < 100;
 				currentPath = calculatePath(snailWorldPoint, playerPoint, forceRecalc, useExistingPath);
 				this.currentPathIndex = 1;
 			}
@@ -461,7 +465,7 @@ public class SnailManModePlugin extends Plugin
 
 		if(client.isInInstancedRegion()) return null;
 
-		List<WorldPoint> existingPath = currentPath == null ? null : currentPath.getPath();
+		List<WorldPoint> existingPath = useExisting ? currentPath.getPath() : null;
 
 		return pathfinder.new Path(start, end, false, existingPath);
 	}
