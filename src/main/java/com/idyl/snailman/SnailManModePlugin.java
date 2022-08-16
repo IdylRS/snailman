@@ -119,7 +119,7 @@ public class SnailManModePlugin extends Plugin
 	private static final String CONFIG_KEY_IS_ALIVE = "isAlive";
 	private static final WorldPoint DEFAULT_SNAIL_START = new WorldPoint(1181, 3624, 0);
 
-	public static final boolean DEV_MODE = false;
+	public static final boolean DEV_MODE = true;
 
 	@Provides
 	SnailManModeConfig provideConfig(ConfigManager configManager)
@@ -266,7 +266,7 @@ public class SnailManModePlugin extends Plugin
 		}
 
 		if(currentPathIndex < pathfinder.getPath().size() && pathfinder.isComplete) {
-			int index = Math.max(pathfinder.getPath().size() - this.currentPathIndex, 0);
+			int index = Math.max(pathfinder.getPath().size() - 1 - this.currentPathIndex, 0);
 			WorldPoint target = pathfinder.getPath().get(index);
 			setSnailWorldPoint(target);
 			currentPathIndex++;
@@ -398,10 +398,10 @@ public class SnailManModePlugin extends Plugin
 
 		if (entry.getOption().equals(ADD_END) && entry.getTarget().equals(TRANSPORT)) {
 			WorldPoint transportEnd = client.getLocalPlayer().getWorldLocation();
-			String transportText = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + " " +
-					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + " " +
+			String transportText = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + "\t" +
+					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + "\t" +
 					lastClick.getOption() + " " + Text.removeTags(lastClick.getTarget()) + " " + lastClick.getIdentifier();
-			System.out.println(transportText);
+			Pathfinder.writeTransportToFile(transportText);
 			Transport transport = new Transport(transportStart, transportEnd);
 			pathfinderConfig.getTransports().computeIfAbsent(transportStart, k -> new ArrayList<>()).add(transport);
 		}

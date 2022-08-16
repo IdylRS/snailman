@@ -1,5 +1,9 @@
 package com.idyl.snailman.pathfinder;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -50,6 +54,14 @@ public class Pathfinder implements Runnable {
         }
 
         new Thread(this).start();
+    }
+
+    public static void writeTransportToFile(String transport) {
+        try {
+            Files.write(Paths.get("src/main/resources/transports.txt"), transport.concat("\n").getBytes(), StandardOpenOption.APPEND);
+        }catch (IOException e) {
+            System.out.println(e);
+        }
     }
 
     private void addNeighbor(Node node, WorldPoint neighbor) {
