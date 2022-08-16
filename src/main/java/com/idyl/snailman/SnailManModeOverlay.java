@@ -35,38 +35,40 @@ public class SnailManModeOverlay extends Overlay {
         setLayer(OverlayLayer.ABOVE_SCENE);
     }
 
-    private void renderTransports(Graphics2D graphics) {
-        for (WorldPoint a : plugin.pathfinder.transports.keySet()) {
-            drawTransport(graphics, a);
-
-            java.awt.Point ca = tileCenter(a);
-
-            if (ca == null) {
-                continue;
-            }
-
-            for (WorldPoint b : plugin.pathfinder.transports.get(a)) {
-                java.awt.Point cb = tileCenter(b);
-
-                if (cb != null) {
-                    graphics.drawLine(ca.x, ca.y, cb.x, cb.y);
-                }
-            }
-
-            StringBuilder s = new StringBuilder();
-            for (WorldPoint b : plugin.pathfinder.transports.get(a)) {
-                if (b.getPlane() > a.getPlane()) {
-                    s.append("+");
-                } else if (b.getPlane() < a.getPlane()) {
-                    s.append("-");
-                } else {
-                    s.append("=");
-                }
-            }
-            graphics.setColor(Color.WHITE);
-            graphics.drawString(s.toString(), ca.x, ca.y);
-        }
-    }
+//    private void renderTransports(Graphics2D graphics) {
+//        for (WorldPoint a : plugin.pathfinderConfig.getTransports().keySet()) {
+//            drawTransport(graphics, a);
+//
+//            java.awt.Point ca = tileCenter(a);
+//
+//            if (ca == null) {
+//                continue;
+//            }
+//
+//            for (Transport t : plugin.pathfinderConfig.getTransports().get(a)) {
+//                WorldPoint b = t.getOrigin();
+//                java.awt.Point cb = tileCenter(b);
+//
+//                if (cb != null) {
+//                    graphics.drawLine(ca.x, ca.y, cb.x, cb.y);
+//                }
+//            }
+//
+//            StringBuilder s = new StringBuilder();
+//            for (Transport t : plugin.pathfinderConfig.getTransports().get(a)) {
+//                WorldPoint b = t.getDestination();
+//                if (b.getPlane() > a.getPlane()) {
+//                    s.append("+");
+//                } else if (b.getPlane() < a.getPlane()) {
+//                    s.append("-");
+//                } else {
+//                    s.append("=");
+//                }
+//            }
+//            graphics.setColor(Color.WHITE);
+//            graphics.drawString(s.toString(), ca.x, ca.y);
+//        }
+//    }
 
     private java.awt.Point tileCenter(WorldPoint b) {
         if (b.getPlane() != client.getPlane()) {
@@ -90,12 +92,12 @@ public class SnailManModeOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if(SnailManModePlugin.DEV_MODE) renderTransports(graphics);
+//        if(SnailManModePlugin.DEV_MODE) renderTransports(graphics);
 
         WorldPoint snailPoint = plugin.getSnailWorldPoint();
 
-        if(SnailManModePlugin.DEV_MODE && plugin.currentPath != null) {
-            List<WorldPoint> path = plugin.currentPath.getPath();
+        if(SnailManModePlugin.DEV_MODE && plugin.pathfinder != null) {
+            List<WorldPoint> path = plugin.pathfinder.getPath();
             for (WorldPoint point : path) {
                 drawTile(graphics, point, Color.GREEN, new BasicStroke((float) 2));
             }

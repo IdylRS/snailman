@@ -6,6 +6,7 @@ import javax.inject.Inject;
 
 import com.idyl.snailman.pathfinder.CollisionMap;
 import com.idyl.snailman.pathfinder.Pathfinder;
+import com.idyl.snailman.pathfinder.PathfinderConfig;
 import com.idyl.snailman.pathfinder.SplitFlagMap;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -84,7 +85,7 @@ public class SnailManModePlugin extends Plugin
 	private NavigationButton navButton;
 
 	public Pathfinder pathfinder;
-	public Pathfinder.Path currentPath;
+	public PathfinderConfig pathfinderConfig;
 
 	private int currentPathIndex;
 
@@ -210,10 +211,12 @@ public class SnailManModePlugin extends Plugin
 
 	public void reset() {
 		setSnailWorldPoint(DEFAULT_SNAIL_START);
-		currentPath = null;
+		pathfinder = null;
 		isAlive = true;
 		isDying = false;
 		deathPoint = null;
+		client.getLocalPlayer().setAnimation(AnimationID.IDLE);
+		client.getLocalPlayer().setGraphic(-1);
 		saveData();
 	}
 
@@ -240,13 +243,13 @@ public class SnailManModePlugin extends Plugin
 		else if(gameStateChanged.getGameState() == GameState.LOGIN_SCREEN && isLoggedIn){
 			isLoggedIn = false;
 			saveData();
-			currentPath = null;
+			pathfinder = null;
 		}
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick tick) {
-		if(!isLoggedIn || config.pauseSnail()) return;
+		if(!isLoggedIn || config.pauseSnail() || isSeasonalWorld(client.getWorld())) return;
 
 		tickCount++;
 
@@ -259,14 +262,14 @@ public class SnailManModePlugin extends Plugin
 
 		if(!snailShouldMove) return;
 
-		if(currentPath == null) {
-			boolean force = distanceToSnail < RECALCULATION_THRESHOLD;
-			currentPath = calculatePath(snailWorldPoint, playerPoint, force, false);
+		if(pathfinder == null) {
+			calculatePath(snailWorldPoint, playerPoint, false, false);
 			return;
 		}
 
-		if(currentPathIndex < currentPath.getPath().size() && currentPath.valid) {
-			WorldPoint target = currentPath.getPath().get(currentPathIndex);
+		if(currentPathIndex < pathfinder.getPath().size() && pathfinder.isComplete) {
+			int index = Math.max(pathfinder.getPath().size() - 1 - this.currentPathIndex, 0);
+			WorldPoint target = pathfinder.getPath().get(index);
 			setSnailWorldPoint(target);
 			currentPathIndex++;
 		}
@@ -289,6 +292,7 @@ public class SnailManModePlugin extends Plugin
 
 				client.getLocalPlayer().setAnimation(AnimationID.DEATH);
 				client.getLocalPlayer().setAnimationFrame(0);
+				client.getLocalPlayer().setGraphic(GraphicID.SNARE);
 
 				isAlive = false;
 				clientThread.invoke(() -> client.runScript(ScriptID.CHAT_PROMPT_INIT));
@@ -372,6 +376,7 @@ public class SnailManModePlugin extends Plugin
 			if(isDying) {
 				isDying = false;
 				client.getLocalPlayer().setAnimation(AnimationID.IDLE);
+				client.getLocalPlayer().setGraphic(-1);
 			}
 		}
 	}
@@ -396,12 +401,13 @@ public class SnailManModePlugin extends Plugin
 		}
 
 		if (entry.getOption().equals(ADD_END) && entry.getTarget().equals(TRANSPORT)) {
-			String transport = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + " " +
-					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + " " +
+			WorldPoint transportEnd = client.getLocalPlayer().getWorldLocation();
+			String transportText = transportStart.getX() + " " + transportStart.getY() + " " + transportStart.getPlane() + "\t" +
+					currentLocation.getX() + " " + currentLocation.getY() + " " + currentLocation.getPlane() + "\t" +
 					lastClick.getOption() + " " + Text.removeTags(lastClick.getTarget()) + " " + lastClick.getIdentifier();
-			System.out.println(transport);
-			pathfinder.transports.computeIfAbsent(transportStart, k -> new ArrayList<>()).add(currentLocation);
-			pathfinder.writeTransportToFile(transport);
+			Pathfinder.writeTransportToFile(transportText);
+			Transport transport = new Transport(transportStart, transportEnd);
+			pathfinderConfig.getTransports().computeIfAbsent(transportStart, k -> new ArrayList<>()).add(transport);
 		}
 
 		if (entry.getType() != MenuAction.WALK) {
@@ -454,7 +460,7 @@ public class SnailManModePlugin extends Plugin
 		if(!isLoggedIn) return;
 
 		if(client.isInInstancedRegion()) {
-			currentPath = null;
+			pathfinder = null;
 			return;
 		}
 
@@ -463,21 +469,17 @@ public class SnailManModePlugin extends Plugin
 
 		boolean forceRecalc = lastPlayerPoint.getPlane() != playerPoint.getPlane();
 
-		if(currentPath != null && !currentPath.valid && lastPlayerPoint.distanceTo(playerPoint) < 20) {
-			return;
-		}
-
 		if(distanceFromPlayer < RECALCULATION_THRESHOLD) {
-			if(currentPath.getTarget().distanceTo2D(playerPoint) > 0) {
-				currentPath = calculatePath(snailWorldPoint, playerPoint, true, false);
+			if(pathfinder.getStart().distanceTo2D(playerPoint) > 0) {
+				calculatePath(snailWorldPoint, playerPoint, true, false);
 				this.currentPathIndex = 1;
 			}
 		}
 		else {
 			// Limit number of recalculations done during player movement
-			if(currentPath.getTarget().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD || forceRecalc) {
+			if(pathfinder.getStart().distanceTo2D(playerPoint) >= RECALCULATION_THRESHOLD || forceRecalc) {
 				boolean useExistingPath = lastPlayerPoint.distanceTo(playerPoint) < 100;
-				currentPath = calculatePath(snailWorldPoint, playerPoint, forceRecalc, useExistingPath);
+				calculatePath(snailWorldPoint, playerPoint, forceRecalc, useExistingPath);
 				this.currentPathIndex = 1;
 			}
 		}
@@ -490,15 +492,15 @@ public class SnailManModePlugin extends Plugin
 		return distanceFromPlayer <= 0;
 	}
 
-	private Pathfinder.Path calculatePath(WorldPoint start, WorldPoint end, boolean force, boolean useExisting) {
-		if(currentPath != null && currentPath.loading && !force) return currentPath;
-		if(currentPath != null) currentPath.stopThread();
+	private void calculatePath(WorldPoint start, WorldPoint end, boolean force, boolean useExisting) {
+		if(pathfinder != null && !pathfinder.isDone() && !force) return;
 
-		if(client.isInInstancedRegion()) return null;
+		if(client.isInInstancedRegion()) return;
 
-		List<WorldPoint> existingPath = useExisting ? currentPath.getPath() : null;
+		List<WorldPoint> existingPath = useExisting ? pathfinder.getPath() : null;
 
-		return pathfinder.new Path(start, end, false, existingPath);
+		pathfinder = new Pathfinder(pathfinderConfig, end, start, existingPath);
+
 	}
 
 	public Point mapWorldPointToGraphicsPoint(WorldPoint worldPoint)
@@ -538,7 +540,7 @@ public class SnailManModePlugin extends Plugin
 	private void loadResources()
 	{
 		Map<SplitFlagMap.Position, byte[]> compressedRegions = new HashMap<>();
-		HashMap<WorldPoint, List<WorldPoint>> transports = new HashMap<>();
+		HashMap<WorldPoint, List<Transport>> transports = new HashMap<>();
 
 		try (ZipInputStream in = new ZipInputStream(SnailManModePlugin.class.getResourceAsStream("/collision-map.zip"))) {
 			ZipEntry entry;
@@ -564,17 +566,17 @@ public class SnailManModePlugin extends Plugin
 					continue;
 				}
 
-				String[] l = line.split(" ");
-				WorldPoint a = new WorldPoint(Integer.parseInt(l[0]), Integer.parseInt(l[1]), Integer.parseInt(l[2]));
-				WorldPoint b = new WorldPoint(Integer.parseInt(l[3]), Integer.parseInt(l[4]), Integer.parseInt(l[5]));
-				transports.computeIfAbsent(a, k -> new ArrayList<>()).add(b);
+				log.info(line);
+
+				Transport transport = new Transport(line);
+				WorldPoint origin = transport.getOrigin();
+				transports.computeIfAbsent(origin, k -> new ArrayList<>()).add(transport);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 
-		CollisionMap map = new CollisionMap(64, compressedRegions);
-		pathfinder = new Pathfinder(map, transports);
+		pathfinderConfig = new PathfinderConfig(new CollisionMap(64, compressedRegions), transports, client);
 
 		final IndexedSprite[] modIcons = client.getModIcons();
 
