@@ -1,6 +1,9 @@
 package com.idyl.snailman.pathfinder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import net.runelite.api.coords.WorldPoint;
 
 public class CollisionMap extends SplitFlagMap {
     public CollisionMap(int regionSize, Map<Position, byte[]> compressedRegions) {
@@ -23,19 +26,43 @@ public class CollisionMap extends SplitFlagMap {
         return e(x - 1, y, z);
     }
 
-    public boolean ne(int x, int y, int z) {
+    private boolean ne(int x, int y, int z) {
         return n(x, y, z) && e(x, y + 1, z) && e(x, y, z) && n(x + 1, y, z);
     }
 
-    public boolean nw(int x, int y, int z) {
+    private boolean nw(int x, int y, int z) {
         return n(x, y, z) && w(x, y + 1, z) && w(x, y, z) && n(x - 1, y, z);
     }
 
-    public boolean se(int x, int y, int z) {
+    private boolean se(int x, int y, int z) {
         return s(x, y, z) && e(x, y - 1, z) && e(x, y, z) && s(x + 1, y, z);
     }
 
-    public boolean sw(int x, int y, int z) {
+    private boolean sw(int x, int y, int z) {
         return s(x, y, z) && w(x, y - 1, z) && w(x, y, z) && s(x - 1, y, z);
+    }
+
+    public boolean isBlocked(int x, int y, int z) {
+        return !n(x, y, z) && !s(x, y, z) && !e(x, y, z) && !w(x, y, z);
+    }
+
+    public List<WorldPoint> getNeighbors(WorldPoint position) {
+        int x = position.getX();
+        int y = position.getY();
+        int z = position.getPlane();
+
+        List<WorldPoint> neighbors = new ArrayList<>();
+        boolean[] traversable = new boolean[] {
+                w(x, y, z), e(x, y, z), s(x, y, z), n(x, y, z), sw(x, y, z), se(x, y, z), nw(x, y, z), ne(x, y, z)
+        };
+
+        for (int i = 0; i < traversable.length; i++) {
+            if (traversable[i]) {
+                OrdinalDirection direction = OrdinalDirection.values()[i];
+                neighbors.add(position.dx(direction.x).dy(direction.y));
+            }
+        }
+
+        return neighbors;
     }
 }

@@ -1,223 +1,113 @@
 package com.idyl.snailman.pathfinder;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.lang.Thread;
-
-import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.coords.WorldArea;
+import lombok.Getter;
 import net.runelite.api.coords.WorldPoint;
+import com.idyl.snailman.Transport;
 
-@Slf4j
-public class Pathfinder {
-    private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
-    private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
+public class Pathfinder implements Runnable {
+    @Getter
+    private final WorldPoint start;
+    @Getter
+    private final WorldPoint target;
+    private final PathfinderConfig config;
 
-    public final CollisionMap map;
-    public final Map<WorldPoint, List<WorldPoint>> transports;
+    private final List<Node> boundary = new LinkedList<>();
+    private final Set<WorldPoint> visited = new HashSet<>();
 
-    public Pathfinder(CollisionMap map, Map<WorldPoint, List<WorldPoint>> transports) {
-        this.map = map;
-        this.transports = transports;
+    private int error;
+
+    @Getter
+    private List<WorldPoint> path = new ArrayList<>();
+    @Getter
+    private boolean done = false;
+
+    public Pathfinder(PathfinderConfig config, WorldPoint start, WorldPoint target, List<WorldPoint> existingPath, int error) {
+        this.config = config;
+        this.start = start;
+        this.target = target;
+
+        this.error = error;
+
+        if(existingPath  != null) {
+            Node prev = null;
+            boolean foundStart = false;
+            for(int i = 0; i < existingPath.size(); i++) {
+                WorldPoint point = existingPath.get(i);
+
+                if(!point.equals(start) && !foundStart) continue;
+                foundStart = true;
+
+                Node n = new Node(existingPath.get(i), prev);
+                boundary.add(n);
+                prev = n;
+            }
+        }
+
+        new Thread(this).start();
     }
 
-    public void writeTransportToFile(String transport) {
-        try {
-            Files.write(Paths.get("src/main/resources/transports.txt"), transport.concat("\n").getBytes(), StandardOpenOption.APPEND);
-        }catch (IOException e) {
-            log.info(e.toString());
+    private void addNeighbor(Node node, WorldPoint neighbor) {
+        if (!visited.add(neighbor)) {
+            return;
+        }
+        boundary.add(new Node(neighbor, node));
+    }
+
+    private void addNeighbors(Node node) {
+        for (WorldPoint neighbor : config.getMap().getNeighbors(node.position)) {
+            addNeighbor(node, neighbor);
+        }
+
+        for (Transport transport : config.getTransports().getOrDefault(node.position, new ArrayList<>())) {
+            addNeighbor(node, transport.getDestination());
         }
     }
 
-    public static boolean isInWilderness(WorldPoint p) {
-        return WILDERNESS_ABOVE_GROUND.distanceTo(p) == 0 || WILDERNESS_UNDERGROUND.distanceTo(p) == 0;
-    }
+    @Override
+    public void run() {
+        boundary.add(new Node(start, null));
 
-    public class Path implements Runnable {
-        private final Node start;
-        private final WorldPoint target;
-        private final boolean avoidWilderness;
+        Node nearest = boundary.get(0);
+        int bestDistance = Integer.MAX_VALUE;
+        Instant cutoffTime = Instant.now().plus(PathfinderConfig.CALCULATION_CUTOFF);
+        long startTime = Instant.now().toEpochMilli();
 
-        private final List<Node> boundary = new LinkedList<>();
-        private final Set<WorldPoint> visited = new HashSet<>();
+        while (!boundary.isEmpty()) {
+            Node node = boundary.remove(0);
 
-        public Node nearest;
-        private List<WorldPoint> path = new ArrayList<>();
-
-        public boolean loading;
-
-        public boolean valid = false;
-
-        public long distance;
-
-        private final Thread thread;
-
-        public Path(WorldPoint start, WorldPoint target, boolean avoidWilderness, List<WorldPoint> existingPath) {
-            this.target = target;
-            this.start = new Node(start, null);
-            this.avoidWilderness = avoidWilderness;
-            this.nearest = null;
-            this.loading = true;
-            this.distance = Integer.MAX_VALUE;
-            this.valid = false;
-
-            if(existingPath  != null) {
-                Node prev = null;
-                boolean foundStart = false;
-                for(int i = 0; i < existingPath.size(); i++) {
-                    WorldPoint point = existingPath.get(i);
-
-                    if(!point.equals(start) && !foundStart) continue;
-                    foundStart = true;
-
-                    Node n = new Node(existingPath.get(i), prev);
-                    boundary.add(n);
-                    prev = n;
-                }
-            }
-
-            thread = new Thread(this);
-            thread.start();
-        }
-
-        public void stopThread() {
-            thread.interrupt();
-        }
-
-        private void addNeighbors(Node node) {
-            if (map.w(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX() - 1, node.position.getY(), node.position.getPlane()));
-            }
-
-            if (map.e(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX() + 1, node.position.getY(), node.position.getPlane()));
-            }
-
-            if (map.s(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX(), node.position.getY() - 1, node.position.getPlane()));
-            }
-
-            if (map.n(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX(), node.position.getY() + 1, node.position.getPlane()));
-            }
-
-            if (map.sw(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX() - 1, node.position.getY() - 1, node.position.getPlane()));
-            }
-
-            if (map.se(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX() + 1, node.position.getY() - 1, node.position.getPlane()));
-            }
-
-            if (map.nw(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX() - 1, node.position.getY() + 1, node.position.getPlane()));
-            }
-
-            if (map.ne(node.position.getX(), node.position.getY(), node.position.getPlane())) {
-                addNeighbor(node, new WorldPoint(node.position.getX() + 1, node.position.getY() + 1, node.position.getPlane()));
-            }
-
-            for (WorldPoint transport : transports.getOrDefault(node.position, new ArrayList<>())) {
-                addNeighbor(node, transport);
-            }
-        }
-
-        public List<WorldPoint> currentBest() {
-            return nearest == null ? null : nearest.path();
-        }
-
-        public List<WorldPoint> getPath() {
-            return this.path;
-        }
-
-        public WorldPoint getStart() {
-            return start.position;
-        }
-
-        public WorldPoint getTarget() {
-            return target;
-        }
-
-        private void addNeighbor(Node node, WorldPoint neighbor) {
-            if (avoidWilderness && isInWilderness(neighbor) && !isInWilderness(node.position) && !isInWilderness(target)) {
-                return;
-            }
-
-            if (!visited.add(neighbor)) {
-                return;
-            }
-
-            boundary.add(new Node(neighbor, node));
-        }
-
-        @Override
-        public void run() {
-            if(boundary.isEmpty()) boundary.add(start);
-
-            int bestDistance = Integer.MAX_VALUE;
-
-            long startTime = Instant.now().toEpochMilli();
-
-            while (!boundary.isEmpty() && !Thread.interrupted()) {
+            if (node.position.equals(target) || node.position.distanceTo(target) <= error) {
+                path = node.getPath();
                 long elapsed = Instant.now().toEpochMilli() - startTime;
-
-                Node node = boundary.remove(0);
-
-                if (node.position.equals(target)) {
-                    this.path = node.path();
-                    this.loading = false;
-                    this.valid = true;
-                    return;
-                }
-
-                int distance = node.position.distanceTo(target);
-                if (nearest == null || distance < bestDistance) {
-                    nearest = node;
-                    bestDistance = distance;
-                    this.distance = distance;
-                }
-
-                addNeighbors(node);
+                System.out.println("Found best path in "+elapsed+" seconds");
+                break;
             }
 
-            if (nearest != null) {
-                this.path = nearest.path();
+            int distance = node.position.distanceTo(target);
+            if (distance < bestDistance) {
+                path = node.getPath();
+                nearest = node;
+                bestDistance = distance;
+                cutoffTime = Instant.now().plus(PathfinderConfig.CALCULATION_CUTOFF);
             }
 
-            this.loading = false;
-            long elapsed = Instant.now().toEpochMilli() - startTime;
-            thread.interrupt();
-        }
-    }
-
-    private static class Node {
-        public final WorldPoint position;
-        public final Node previous;
-
-        public Node(WorldPoint position, Node previous) {
-            this.position = position;
-            this.previous = previous;
-        }
-
-        public List<WorldPoint> path() {
-            List<WorldPoint> path = new LinkedList<>();
-            Node node = this;
-
-            while (node != null) {
-                path.add(0, node.position);
-                node = node.previous;
+            if (Instant.now().isAfter(cutoffTime)) {
+                path = nearest.getPath();
+                long elapsed = Instant.now().toEpochMilli() - startTime;
+                System.out.println("Cutoff pathfinding at "+elapsed+" seconds");
+                break;
             }
 
-            return new ArrayList<>(path);
+            addNeighbors(node);
         }
+
+        done = true;
+        boundary.clear();
+        visited.clear();
     }
 }
