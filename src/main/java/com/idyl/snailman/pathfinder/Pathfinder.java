@@ -20,19 +20,19 @@ public class Pathfinder implements Runnable {
     private final List<Node> boundary = new LinkedList<>();
     private final Set<WorldPoint> visited = new HashSet<>();
 
-    private int error;
+    public boolean isComplete;
 
     @Getter
     private List<WorldPoint> path = new ArrayList<>();
     @Getter
     private boolean done = false;
 
-    public Pathfinder(PathfinderConfig config, WorldPoint start, WorldPoint target, List<WorldPoint> existingPath, int error) {
+    public Pathfinder(PathfinderConfig config, WorldPoint start, WorldPoint target, List<WorldPoint> existingPath) {
         this.config = config;
         this.start = start;
         this.target = target;
 
-        this.error = error;
+        isComplete = false;
 
         if(existingPath  != null) {
             Node prev = null;
@@ -81,10 +81,10 @@ public class Pathfinder implements Runnable {
         while (!boundary.isEmpty()) {
             Node node = boundary.remove(0);
 
-            if (node.position.equals(target) || node.position.distanceTo(target) <= error) {
+            if (node.position.equals(target)) {
                 path = node.getPath();
-                long elapsed = Instant.now().toEpochMilli() - startTime;
-                System.out.println("Found best path in "+elapsed+" seconds");
+                System.out.println("Found best path.");
+                isComplete = true;
                 break;
             }
 
@@ -99,12 +99,13 @@ public class Pathfinder implements Runnable {
             if (Instant.now().isAfter(cutoffTime)) {
                 path = nearest.getPath();
                 long elapsed = Instant.now().toEpochMilli() - startTime;
-                System.out.println("Cutoff pathfinding at "+elapsed+" seconds");
                 break;
             }
 
             addNeighbors(node);
         }
+        long elapsed = Instant.now().toEpochMilli() - startTime;
+        System.out.println("Finished calculation in "+elapsed+"ms");
 
         done = true;
         boundary.clear();
