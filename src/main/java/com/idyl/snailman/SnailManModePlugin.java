@@ -215,6 +215,8 @@ public class SnailManModePlugin extends Plugin
 		isAlive = true;
 		isDying = false;
 		deathPoint = null;
+		client.getLocalPlayer().setAnimation(AnimationID.IDLE);
+		client.getLocalPlayer().setGraphic(-1);
 		saveData();
 	}
 
@@ -290,6 +292,7 @@ public class SnailManModePlugin extends Plugin
 
 				client.getLocalPlayer().setAnimation(AnimationID.DEATH);
 				client.getLocalPlayer().setAnimationFrame(0);
+				client.getLocalPlayer().setGraphic(GraphicID.SNARE);
 
 				isAlive = false;
 				clientThread.invoke(() -> client.runScript(ScriptID.CHAT_PROMPT_INIT));
@@ -373,6 +376,7 @@ public class SnailManModePlugin extends Plugin
 			if(isDying) {
 				isDying = false;
 				client.getLocalPlayer().setAnimation(AnimationID.IDLE);
+				client.getLocalPlayer().setGraphic(-1);
 			}
 		}
 	}
