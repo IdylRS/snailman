@@ -17,6 +17,7 @@ import java.awt.image.BufferedImage;
 @Slf4j
 public class SnailManModeOverlay extends Overlay {
     private static final int MAX_DRAW_DISTANCE = 32;
+    private static final int MAX_DRAW_DISTANCE_HORROR = 10;
 
     private final Client client;
     private final SnailManModeConfig config;
@@ -95,12 +96,20 @@ public class SnailManModeOverlay extends Overlay {
 //        if(SnailManModePlugin.DEV_MODE) renderTransports(graphics);
 
         WorldPoint snailPoint = plugin.getSnailWorldPoint();
+        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
 
         if(SnailManModePlugin.DEV_MODE && plugin.pathfinder != null) {
             List<WorldPoint> path = plugin.pathfinder.getPath();
             for (WorldPoint point : path) {
                 drawTile(graphics, point, Color.GREEN, new BasicStroke((float) 2));
             }
+        }
+
+        long drawDistance = config.horrorMode() ? MAX_DRAW_DISTANCE_HORROR : MAX_DRAW_DISTANCE;
+
+        if (snailPoint.distanceTo(playerLocation) >= drawDistance)
+        {
+            return null;
         }
 
         drawTile(graphics, snailPoint, config.color(), new BasicStroke((float) 2));
@@ -110,12 +119,6 @@ public class SnailManModeOverlay extends Overlay {
 
     private void drawTile(Graphics2D graphics, WorldPoint point, Color color, Stroke borderStroke)
     {
-        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-
-        if (point.distanceTo(playerLocation) >= MAX_DRAW_DISTANCE)
-        {
-            return;
-        }
 
         LocalPoint lp = LocalPoint.fromWorld(client, point);
         if (lp == null)

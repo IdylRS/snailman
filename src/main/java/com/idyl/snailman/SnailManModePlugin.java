@@ -109,7 +109,11 @@ public class SnailManModePlugin extends Plugin
 
 	private WorldPoint lastPlayerPoint;
 
+	private static boolean horrorCloseFlag = false;
+
 	private static final int RECALCULATION_THRESHOLD = 20;
+	private static final int SNAIL_HORROR_SOUND = 1899;
+	private static final int SNAIL_HORROR_DISTANCE = 15;
 	private static final String ADD_START = "Add start";
 	private static final String ADD_END = "Add end";
 	private static final String WALK_HERE = "Walk here";
@@ -274,11 +278,14 @@ public class SnailManModePlugin extends Plugin
 			currentPathIndex++;
 		}
 
+		if(config.horrorMode()) {
+			performHorrorModeChecks(distanceToSnail);
+		}
+
 		if(checkTouching()) {
 			final ChatMessageBuilder message = new ChatMessageBuilder()
 						.append(ChatColorType.HIGHLIGHT)
-						.append("You have been touched by the snail. You are dead.")
-						.append(ChatColorType.NORMAL);
+						.append("You have been touched by the snail. You are dead.");
 
 			if(isAlive) {
 				isDying = true;
@@ -412,6 +419,27 @@ public class SnailManModePlugin extends Plugin
 
 		if (entry.getType() != MenuAction.WALK) {
 			lastClick = entry;
+		}
+	}
+
+	private void performHorrorModeChecks(long distanceToSnail) {
+		if(config.pauseSnail() || !isAlive) return;
+
+		if(distanceToSnail < SNAIL_HORROR_DISTANCE && !horrorCloseFlag) {
+			final ChatMessageBuilder message = new ChatMessageBuilder()
+					.append(ChatColorType.HIGHLIGHT)
+					.append("You see something moving in the fog...");
+
+			chatMessageManager.queue(QueuedMessage.builder()
+					.type(ChatMessageType.GAMEMESSAGE)
+					.runeLiteFormattedMessage(message.build())
+					.build());
+
+			client.playSoundEffect(SNAIL_HORROR_SOUND);
+			horrorCloseFlag = true;
+		}
+		else if(distanceToSnail > 30 && horrorCloseFlag) {
+			horrorCloseFlag = false;
 		}
 	}
 
@@ -565,8 +593,6 @@ public class SnailManModePlugin extends Plugin
 				if (line.startsWith("#") || line.isEmpty()) {
 					continue;
 				}
-
-				log.info(line);
 
 				Transport transport = new Transport(line);
 				WorldPoint origin = transport.getOrigin();

@@ -20,6 +20,17 @@ public interface SnailManModeConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "horrorMode",
+			name = "Horror Mode",
+			description = "Activate Horror Mode (best experienced with minimum render distance & maximum fog in the GPU plugin)"
+	)
+	default boolean horrorMode()
+	{
+		return false;
+	}
+
+
+	@ConfigItem(
 			keyName = "speedBoost",
 			name = "Speed Boost",
 			description = "Snail moves 1 tile per tick when it gets close to you"
