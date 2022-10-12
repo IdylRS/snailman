@@ -17,7 +17,6 @@ import java.awt.image.BufferedImage;
 @Slf4j
 public class SnailManModeOverlay extends Overlay {
     private static final int MAX_DRAW_DISTANCE = 32;
-    private static final int MAX_DRAW_DISTANCE_HORROR = 10;
 
     private final Client client;
     private final SnailManModeConfig config;
@@ -105,7 +104,7 @@ public class SnailManModeOverlay extends Overlay {
             }
         }
 
-        long drawDistance = config.horrorMode() ? MAX_DRAW_DISTANCE_HORROR : MAX_DRAW_DISTANCE;
+        long drawDistance = config.horrorMode() ? config.drawDistance() : MAX_DRAW_DISTANCE;
 
         if (snailPoint.distanceTo(playerLocation) >= drawDistance)
         {
