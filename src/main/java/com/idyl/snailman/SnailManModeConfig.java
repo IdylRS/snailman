@@ -7,13 +7,6 @@ import java.awt.*;
 @ConfigGroup("snailmanmode")
 public interface SnailManModeConfig extends Config
 {
-	@ConfigSection(
-			name = "Horror Options",
-			description = "Config settings for horror mode",
-			position = 99
-	)
-	String horrorSection = "section";
-
 	@ConfigItem(
 			keyName = "snailColor",
 			name = "Snail Color",
@@ -64,8 +57,8 @@ public interface SnailManModeConfig extends Config
 	@ConfigItem(
 			keyName = "horrorMode",
 			name = "Horror Mode",
-			description = "Activate Horror Mode (best experienced with minimum render distance & maximum fog in the GPU plugin)",
-			section = horrorSection
+			description = "Plays a sound when the snail is nearby (best experienced with minimum render distance & maximum fog in the GPU plugin)",
+			position = 7
 	)
 	default boolean horrorMode()
 	{
@@ -76,11 +69,11 @@ public interface SnailManModeConfig extends Config
 			keyName = "drawDistance",
 			name = "Draw Distance",
 			description = "Distance at which the snail is rendered",
-			section = horrorSection
+			position = 6
 	)
 	@Range(
 			min = 1,
 			max = 32
 	)
-	default int drawDistance() { return 5; }
+	default int drawDistance() { return 32; }
 }

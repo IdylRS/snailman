@@ -22,6 +22,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.WorldService;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -29,6 +30,7 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
@@ -40,7 +42,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -81,6 +85,12 @@ public class SnailManModePlugin extends Plugin
 
 	@Inject
 	private ClientToolbar clientToolbar;
+
+	@Inject
+	private InfoBoxManager infoBoxManager;
+
+	@Inject
+	private ItemManager itemManager;
 
 	private NavigationButton navButton;
 
@@ -163,6 +173,7 @@ public class SnailManModePlugin extends Plugin
 		overlayManager.remove(snailManModeOverlay);
 		overlayManager.remove(snailManModeMapOverlay);
 		clientToolbar.removeNavigation(navButton);
+		infoBoxManager.removeIf(t -> t instanceof TeleportTimer);
 	}
 
 	private void addSnailmanIcon(ChatMessage chatMessage)
@@ -219,6 +230,7 @@ public class SnailManModePlugin extends Plugin
 		isAlive = true;
 		isDying = false;
 		deathPoint = null;
+		horrorCloseFlag = false;
 		client.getLocalPlayer().setAnimation(AnimationID.IDLE);
 		client.getLocalPlayer().setGraphic(-1);
 		saveData();
@@ -374,13 +386,11 @@ public class SnailManModePlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onHitsplatApplied(HitsplatApplied event)
-	{
-		if (event.getActor() instanceof Player)
-		{
+	public void onHitsplatApplied(HitsplatApplied event) {
+		if (event.getActor() instanceof Player) {
 			final Player player = (Player) event.getActor();
 
-			if(isDying) {
+			if (isDying) {
 				isDying = false;
 				client.getLocalPlayer().setAnimation(AnimationID.IDLE);
 				client.getLocalPlayer().setGraphic(-1);
@@ -426,6 +436,7 @@ public class SnailManModePlugin extends Plugin
 		if(config.pauseSnail() || !isAlive) return;
 
 		if(distanceToSnail < SNAIL_HORROR_DISTANCE && !horrorCloseFlag) {
+			horrorCloseFlag = true;
 			final ChatMessageBuilder message = new ChatMessageBuilder()
 					.append(ChatColorType.HIGHLIGHT)
 					.append("You see something moving in the fog...");
@@ -435,8 +446,10 @@ public class SnailManModePlugin extends Plugin
 					.runeLiteFormattedMessage(message.build())
 					.build());
 
+			TeleportTimer timer = new TeleportTimer(Duration.of(10, ChronoUnit.SECONDS), itemManager.getImage(3327), this);
+			infoBoxManager.addInfoBox(timer);
+
 			client.playSoundEffect(SNAIL_HORROR_SOUND);
-			horrorCloseFlag = true;
 		}
 		else if(distanceToSnail > 30 && horrorCloseFlag) {
 			horrorCloseFlag = false;

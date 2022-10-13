@@ -104,7 +104,7 @@ public class SnailManModeOverlay extends Overlay {
             }
         }
 
-        long drawDistance = config.horrorMode() ? config.drawDistance() : MAX_DRAW_DISTANCE;
+        long drawDistance = config.drawDistance();
 
         if (snailPoint.distanceTo(playerLocation) >= drawDistance)
         {
